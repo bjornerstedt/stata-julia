@@ -3,7 +3,6 @@ JULIA_DEFINE_FAST_TLS(); // only define this once, in an executable (not in a sh
 
 int main(int argc, char *argv[])
 {
-    /* required: setup the Julia context */
     jl_init();
 
     /* run Julia commands */
@@ -21,11 +20,6 @@ int main(int argc, char *argv[])
     }
     printf("\n" );
 
-    /* strongly recommended: notify Julia that the
-         program is about to terminate. this allows
-         Julia time to cleanup pending write requests
-         and run all finalizers
-    */
     jl_atexit_hook(0);
     return 0;
 }
