@@ -37,7 +37,7 @@ TestModule.f(6)
 x = [1.0 2 3; 4 5 6]
 
 
-testf!(x)
+x
 
 A = [1 2 3; 4 5 6; 7 8 9]
 transpose(A)
