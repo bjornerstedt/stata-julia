@@ -4,7 +4,7 @@ capture program drop julia
 * Example dataset:
 set obs 5
 gen n = _n
-gen v = exp(n)d
+gen v = exp(n)
 gen nv = 0.0
 
 scalar x = 2

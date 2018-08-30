@@ -21,9 +21,5 @@ h(x...) = min(x...)
 rev = reverse!
 
 function testf!(x::Array)
-     x[:] = 3.*x
-end
-
-function rowcol()
-    [1 2; 3 4; 5, 6]
+     x[:] = 2.*x
 end

@@ -8,4 +8,3 @@ else
   exit
 fi
 stata < hello.do
-rm hello.plugin

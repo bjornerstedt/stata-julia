@@ -3,6 +3,8 @@
 
 STDLL stata_call(int argc, char *argv[])
 {
+	jl_init();
+
 	char macname[40];
 	char buf[80];
 	// SF_macro_save("macro", "macname");
@@ -20,7 +22,7 @@ STDLL stata_call(int argc, char *argv[])
 	ST_double k = 2.0;
 	ST_int retval = 0;
 	ST_int i, j;
-	ST_retcode	  rc ;
+	ST_retcode rc ;
 
 	// NOTE that Stata uses 1 based index!
 	ST_int rows = SF_row("A");
