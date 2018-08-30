@@ -7,4 +7,3 @@ scalar x = 2
 plugin call hello
 
 display x
-exit
