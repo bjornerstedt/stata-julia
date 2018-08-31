@@ -1,24 +1,60 @@
-
 #include "stplugin.h"
 #include <julia.h>
+#include <strings.h>
 JULIA_DEFINE_FAST_TLS();
 
 STDLL stata_call(int argc, char *argv[]);
 int process(char* array1, char* array2, char *command);
 int set_array(char* name, jl_array_t *x);
 jl_array_t *get_array(char* name);
+int execute_command(char *command);
 
 STDLL stata_call(int argc, char *argv[])
 {
-	int retval;
 	jl_init();
-	jl_eval_string("include(\"init.jl\")");
+	if (argc != 3) {
+		SF_error("Internal error. ADO file has sent the wrong number of pars");
+		return 1;
+	}
+	char* method = argv[0];
+	char* using = argv[1];
+	char* command = argv[2];
+	char buf[80] ;
+
+	if (strlen(using) == 0) {
+		return execute_command(command);
+	}
+	if (strlen(method) == 0) {
+		SF_error("Either method or command has to be specified.\n");
+		return 1;
+	}
+
+	int retval = 0;
+	snprintf(buf, 80, "include(\"%s\")", using) ;
+	jl_eval_string(buf);
 	if (jl_exception_occurred()) {
 		SF_error("File init.jl not found");
 		 SF_error((char*)jl_typeof_str(jl_exception_occurred()));
 		 return 101;
-		}
-	retval = process( "A", "B", "testf!");
+	}
+
+	// Get matrix names from init.jl
+	jl_value_t *ret = jl_eval_string("inmatrix");
+	if (jl_exception_occurred()) {
+		SF_error("inmatrix not found");
+		 return 101;
+	}
+	char *mat1 = jl_string_ptr(ret);
+	ret = jl_eval_string("outmatrix");
+	if (jl_exception_occurred()) {
+		SF_error("outmatrix not found");
+		 return 101;
+	}
+	char *mat2 = jl_string_ptr(ret);
+
+	// Invoke command
+	retval = process( mat1, mat2, "testf!");
+
 	jl_atexit_hook(0);
 	return(retval) ;
 }
@@ -83,7 +119,7 @@ int set_array(char* name, jl_array_t *x) {
 	size_t rowsj = jl_array_dim(x, 0);
 	size_t colsj = jl_array_dim(x, 1);
 	if (rowsj != rows || colsj != cols) {
-		snprintf(errbuf, 80, "ERROR: matrix dimensions for do not match for: ", name);
+		snprintf(errbuf, 80, "ERROR: matrix dimensions for do not match for: %s", name);
 		return 99;
 	}
 
@@ -129,11 +165,33 @@ int process(char* array1, char* array2, char *command)
     return 0;
 }
 
-
-// Do something
-// call_julia1(x, "testf!");
-// if (jl_exception_occurred()) {
-// 	SF_display("No way!");
-// 	SF_display(jl_typeof_str(jl_exception_occurred()) );
-// 	return 1;
-// } else
+int execute_command(char *command) {
+	char buf[80] ;
+	if (strlen(command) == 0) {
+		SF_error("Either using och command options have to be set");
+		return 1;
+	}
+	jl_value_t *ret = jl_eval_string(command);
+	if (jl_exception_occurred()) {
+		SF_error("Could not understand Julia command");
+		return 1;
+	}
+	if (jl_typeis(ret, jl_float64_type)) {
+			double ret_unboxed = jl_unbox_float64(ret);
+			snprintf(buf, 80, "Result: %f\n", ret_unboxed) ;
+			SF_display(buf);
+			// TODO: Fix return values as global
+			// SF_scal_save("r(command)", ret_unboxed);
+			// SF_scal_save("command", ret_unboxed);
+			return 0;
+	} else {
+		int ret_unboxed = jl_unbox_int64(ret);
+		if (jl_exception_occurred()) {
+			SF_error("Only expressions returning a float or double are allowed.\n");
+			return 1;
+		}
+		snprintf(buf, 80, "Result: %ld\n", ret_unboxed) ;
+		SF_display(buf);
+		return 0;
+	}
+}

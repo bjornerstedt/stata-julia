@@ -1,5 +1,9 @@
 # test.jl
 
+matrices = ["A" "B"]
+inmatrix = "A"
+outmatrix = "B"
+
 function doubleall(x::Array, y::Array)
      y[:] = 2.*x
 end

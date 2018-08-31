@@ -8,4 +8,4 @@ else
   exit
 fi
 
-stata < calljulia.do
+stata < test_stata.do

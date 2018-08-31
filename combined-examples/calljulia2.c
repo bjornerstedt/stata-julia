@@ -211,3 +211,11 @@ int communicate(char *command)
 
   return 0;
 }
+
+// Do something
+// call_julia1(x, "testf!");
+// if (jl_exception_occurred()) {
+// 	SF_display("No way!");
+// 	SF_display(jl_typeof_str(jl_exception_occurred()) );
+// 	return 1;
+// } else
