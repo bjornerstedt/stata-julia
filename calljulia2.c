@@ -84,7 +84,12 @@ STDLL stata_call(int argc, char *argv[])
 
 jl_array_t *call_julia1(jl_array_t* x, char *funcname) {
   jl_function_t *func = jl_get_function(jl_current_module, funcname);
-  (jl_array_t*)jl_call1(func, (jl_value_t*)x);
+	if (jl_exception_occurred()) {
+		SF_error("Could not get function.\n");
+		return NULL;
+	} else {
+  	(jl_array_t*)jl_call1(func, (jl_value_t*)x);
+	}
 }
 
 jl_array_t *call_julia2(jl_array_t* x, jl_array_t* y, char *funcname) {

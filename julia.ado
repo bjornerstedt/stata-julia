@@ -1,9 +1,9 @@
 version 13
 
 program julia
-syntax [varlist] [if] [in] , command(string)
+syntax [varlist] [if] [in] , method(string) using(string) [command(string)]
 
-plugin call calljulia `varlist' `if' `in', `command'
+plugin call calljulia `varlist' `if' `in', "`method'"  "`using'"  "`command'" 
 
 end
 

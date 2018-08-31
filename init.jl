@@ -1,8 +1,8 @@
 # test.jl
 
-function f(x::Array,y::Array)
-     y = 2.*x
- end
+function doubleall(x::Array, y::Array)
+     y[:] = 2.*x
+end
 
  function testf(x::Array)
      y = 2.*x
@@ -21,5 +21,5 @@ h(x...) = min(x...)
 rev = reverse!
 
 function testf!(x::Array)
-     x[:] = 2.*x
+     x[:] = x
 end
