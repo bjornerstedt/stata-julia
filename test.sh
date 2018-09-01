@@ -8,4 +8,4 @@ else
   exit
 fi
 
-stata < test_stata.do
+stata < test_simple.do

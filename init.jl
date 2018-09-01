@@ -4,9 +4,16 @@ matrices = ["A" "B"]
 inmatrix = "A"
 outmatrix = "B"
 
-function set_global_var(x)
-     global B = x
+# Should set a bunch of vars
+function set_global_var(s::AbstractString, v::Any)
+         s = Symbol(s)
+         @eval (($s) = ($v))
 end
+
+function modify_global_var()
+    global W = 32
+end
+
 
 function doubleall(x::Array, y::Array)
      y[:] = 2.*x
@@ -29,5 +36,9 @@ h(x...) = min(x...)
 rev = reverse!
 
 function testf!(x::Array)
-     x[:] = x
+     x[:] = 2 .* x
 end
+
+set_global_var("x", 2)
+
+x

@@ -3,7 +3,7 @@
 # export JULIA_HOME=/Applications/Julia-0.6.app/Contents/Resources/julia/bin
 # export JULIA_BINDIR=/Applications/Julia-0.6.app/Contents/Resources/julia/bin
 
-/Applications/Julia-0.6.app/Contents/Resources/julia/share/julia/julia-config.jl --cflags --ldflags --ldlibs | xargs gcc julia_fun.c
+/Applications/Julia-0.6.app/Contents/Resources/julia/share/julia/julia-config.jl --cflags --ldflags --ldlibs | xargs gcc invoke_julia.c
 
 ./a.out
 rm a.out

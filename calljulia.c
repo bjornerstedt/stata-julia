@@ -3,21 +3,74 @@
 #include <strings.h>
 #include "statajulia.h"
 
+// Invoked by main method stata_call
+int SJ_process(char* array1, char* array2, char *method)
+{
+		int rc = 0;
+		jl_array_t *x = SJ_get_matrix(array1);
+		if (x == NULL) {
+			SF_error("Could not get array.\n");
+			return 999;
+		}
+
+		// SJ_process matrix in Julia
+		jl_function_t *func = jl_get_function(jl_current_module, method);
+		if (jl_exception_occurred()) {
+			SF_error("Could not get function.\n");
+			return 99;
+		}
+		jl_call1(func, (jl_value_t *)x);
+		if (jl_exception_occurred()) {
+			SF_error("Could not call function: ");
+			SF_error(method);
+			return 99;
+		}
+		rc = SJ_set_matrix(array2, x);
+		{
+			// TEST setting and getting a global var in Julia
+			jl_value_t *y = jl_box_float64(8.0);
+			SJ_set_jl_var("W", y);
+			if (jl_exception_occurred()) {
+				SF_error("Error");
+				return 2;
+			}
+			// y = SJ_get_jl_var("W");
+			// char errbuf[80];
+			// double ret = jl_unbox_float64(y);
+			// snprintf(errbuf, 80, "Y value: %f\n", ret) ;
+			// SF_display(errbuf);
+
+		}
+		return rc;
+}
+
+// Set Julia global array with name
+int SJ_set_jl_var(char* name, jl_value_t *x) {
+	jl_function_t *func = jl_get_function(jl_current_module, "doubleall");
+	// jl_get_function(jl_base_module, "reverse");
+	if (jl_exception_occurred()) {
+		SF_display("set_global_var() not found in init.jl\n");
+		return 1;
+	}
+	// jl_call2(func, name, x);
+	SF_display("HEJ");
+	// if (jl_exception_occurred()) {
+	//   SF_display("Could not set global var in Julia.\n");
+	// 	return 1;
+	// }
+}
 
 // Get Julia global array by name
-jl_array_t *SJ_get_jl_var(char* name) {
+jl_value_t *SJ_get_jl_var(char* name) {
 	jl_value_t *ret = jl_eval_string(name);
 	if (jl_exception_occurred()) {
-		char errbuf[80] ;
-	  snprintf(errbuf, 80, "Could not get Julia array: %s\n", name) ;
+		char errbuf[80];
+	  snprintf(errbuf, 80, "Could not get Julia var: %s\n", name) ;
 	  SF_display(errbuf);
 		return NULL;
 	}
 }
 
-// Set Julia global array with name
-int SJ_set_jl_var(char* name, jl_array_t *x) {
-}
 
 // Get Stata global array by name
 jl_array_t *SJ_get_matrix(char* name) {
@@ -95,35 +148,6 @@ int SJ_set_matrix(char* name, jl_array_t *x) {
 		}
 	}
 	return 0;
-}
-
-int SJ_process(char* array1, char* array2, char *command)
-{
-		jl_array_t *x = SJ_get_matrix(array1);
-		if (x == NULL) {
-			SF_error("Could not get array.\n");
-			return 999;
-		}
-
-		// SJ_process matrix in Julia
-		jl_function_t *func = jl_get_function(jl_current_module, command);
-		if (jl_exception_occurred()) {
-			SF_error("Could not get function.\n");
-			return 99;
-		}
-		jl_call1(func, (jl_value_t *)x);
-		if (jl_exception_occurred()) {
-			SF_error("Could not call function: ");
-			SF_error(command);
-			return 99;
-		}
-
-		int rc = SJ_set_matrix(array2, x);
-		if (rc) {
-			SF_error("Could not set array.\n");
-			return rc;
-		}
-    return 0;
 }
 
 // Execute single Julia command, returning the result in a Stata macro

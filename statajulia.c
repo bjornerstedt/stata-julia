@@ -30,9 +30,10 @@ STDLL stata_call(int argc, char *argv[])
 	snprintf(buf, 80, "include(\"%s\")", using) ;
 	jl_eval_string(buf);
 	if (jl_exception_occurred()) {
-		SF_error("File init.jl not found");
-		 SF_error((char*)jl_typeof_str(jl_exception_occurred()));
-		 return 101;
+		char errbuf[80];
+	  snprintf(errbuf, 80, "File init.jl not executed, error: %s.\n", jl_typeof_str(jl_exception_occurred())) ;
+	  SF_error(errbuf);
+		return 101;
 	}
 
 	// Get matrix names from init.jl
