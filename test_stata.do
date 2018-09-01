@@ -29,4 +29,4 @@ matlist B
 
 julia , command(a=2+2)
 julia , command(2+2.0)
-di `r(command)'
+di r(command)

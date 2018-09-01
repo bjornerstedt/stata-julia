@@ -4,6 +4,10 @@ matrices = ["A" "B"]
 inmatrix = "A"
 outmatrix = "B"
 
+function set_global_var(x)
+     global B = x
+end
+
 function doubleall(x::Array, y::Array)
      y[:] = 2.*x
 end

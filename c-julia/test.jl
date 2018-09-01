@@ -42,12 +42,16 @@ x
 A = [1 2 3; 4 5 6; 7 8 9]
 transpose(A)
 
-function f(x::Array, y::Array)
-     y[1,1] = 3
- end
+function f()
+     B = A
+end
 
-y = A
+y = f()
 
-testf!(A)
+function g(x)
+     global B = x
+end
 
-A
+g(A)
+
+B
