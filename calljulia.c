@@ -9,6 +9,7 @@ int SJ_process(char *funcname)
 		int rc = 0;
 		SJ_get_macros();
 		SJ_get_matrices();
+		SJ_get_dataset();
 
 		jl_function_t *func = jl_get_function(jl_current_module, funcname);
 		if (jl_exception_occurred() || func == NULL) {
@@ -69,6 +70,29 @@ int SJ_set_matrices() {
     return 0;
 }
 
+int SJ_set_dataset() {
+	jl_value_t *ret = jl_eval_string("set_variables");
+    if (jl_exception_occurred()) {
+        SF_display("set_variables not found\n");
+		return 1;
+	}
+    char *str = jl_string_ptr(ret);
+    char *name = strtok(str, " ");
+    while( name != NULL ) {
+		char command[80];
+		snprintf(command, 80, "getVariable(\"%s\")", name);
+		jl_value_t *x = jl_eval_string(command);
+	  	if (jl_exception_occurred()) {
+	  		SF_error("Could not get array from Julia\n");
+	  		return 1;
+	  	}
+		SJ_set_matrix(name, (jl_array_t *)x);
+		// Get next name
+        name = strtok(NULL, " ");
+    }
+    return 0;
+}
+
 int SJ_get_macros() {
     jl_value_t *ret = jl_eval_string("get_macros");
     if (jl_exception_occurred()) {
@@ -114,13 +138,57 @@ int SJ_set_macros() {
     return 0;
 }
 
+int SJ_get_dataset() {
+	ST_int cols = SF_nvars();
+	if (cols == 0) {
+		return 1;
+	}
+	ST_int rows = SF_in2() ;
+
+	jl_value_t *ret = jl_eval_string("get_variables");
+    if (jl_exception_occurred()) {
+        SF_display("get_variables not found\n");
+		return 1;
+	}
+	// Create 2D array of float64 type
+    jl_value_t *array_type = jl_apply_array_type((jl_value_t*)jl_float64_type, 2);
+	if (jl_exception_occurred()) {
+		SF_error("Could not allocate memory 1.\n");
+		return 99;
+	}
+	jl_array_t *x  = jl_alloc_array_2d(array_type, rows, cols);
+	if (jl_exception_occurred() || x == NULL) {
+		SF_error("Could not allocate memory.\n");
+		return 99;
+	}
+
+	double *xData = (double*)jl_array_data(x);
+	ST_double z;
+	ST_retcode rc ;
+	for(ST_int i = 0; i < rows; i++) {
+		for(ST_int j = 0; j < cols; j++) {
+			// NOTE that Stata uses 1 based index!
+			if((rc = SF_vdata( i + 1, j + 1, &z))) return(rc) ;
+			xData[j + cols*i] = z;
+		}
+	}
+	jl_function_t *func = jl_get_function(jl_current_module, "addDataset");
+	if (jl_exception_occurred() || func == NULL) {
+		SF_error("function addDataset not found\n");
+		return 1010;
+	}
+	jl_call1(func, x);
+	if (jl_exception_occurred())
+		SF_display("setting of dataset in Julia failed\n");
+    return 0;
+}
+
 // Get Stata global array by name
 jl_array_t *SJ_get_matrix(char* name) {
 	ST_int rows = SF_row(name);
 	ST_int cols = SF_col(name);
 	ST_int i, j;
 	ST_retcode rc ;
-	ST_double z, w;
 
 	if (rows == 0) {
 		char errbuf[80] ;
@@ -145,6 +213,7 @@ jl_array_t *SJ_get_matrix(char* name) {
 	// Get array pointer
     double *xData = (double*)jl_array_data(x);
 
+	ST_double z;
 	for( i = 0; i < rows; i++) {
 		for( j = 0; j < cols; j++) {
 			// NOTE that Stata uses 1 based index!

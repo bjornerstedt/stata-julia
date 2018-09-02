@@ -40,3 +40,9 @@ addtodict("HÅ",1)
 addtodict("HEJ",1)
 getfromdict("HÅ")
 dict
+Ab = ["x" "y" "z" ;A]
+
+Ab
+using DataFrames
+
+df = convert( DataFrame,A)

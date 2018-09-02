@@ -11,3 +11,5 @@ int SJ_get_macros();
 int SJ_set_macros();
 int SJ_get_matrices();
 int SJ_set_matrices();
+int SJ_get_dataset();
+int SJ_set_dataset();
