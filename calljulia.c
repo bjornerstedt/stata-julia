@@ -3,124 +3,116 @@
 #include <strings.h>
 #include "statajulia.h"
 
-// Invoked by main method stata_call
-int SJ_process(char* array1, char* array2, char *method)
+// Invoked by main funcname stata_call
+int SJ_process(char *funcname)
 {
 		int rc = 0;
-		jl_array_t *x = SJ_get_matrix(array1);
-		if (x == NULL) {
-			SF_error("Could not get array.\n");
-			return 999;
-		}
-
-		// SJ_process matrix in Julia
-		jl_function_t *func = jl_get_function(jl_current_module, method);
-		if (jl_exception_occurred()) {
-			SF_error("Could not get function.\n");
-			return 99;
-		}
-		jl_call1(func, (jl_value_t *)x);
-		if (jl_exception_occurred()) {
-			SF_error("Could not call function: ");
-			SF_error(method);
-			return 99;
-		}
-		rc = SJ_set_matrix(array2, x);
-		{
-			// // TEST setting and getting a global var in Julia
-			// jl_value_t *y = jl_box_float64(8.0);
-			// SJ_set_jl_var("W", y);
-			// if (jl_exception_occurred()) {
-			// 	SF_error("Error");
-			// 	return 2;
-			// }
-			// y = SJ_get_jl_var("W");
-			// char errbuf[80];
-			// double ret = jl_unbox_float64(y);
-			// snprintf(errbuf, 80, "Y value: %f\n", ret) ;
-			// SF_display(errbuf);
-
-		}
 		SJ_get_macros();
-		jl_eval_string("dict[\"global1\"] = \"999\"");
-		jl_eval_string("dict[\"global2\"] = \"1001\"");
+		SJ_get_matrices();
 
+		jl_function_t *func = jl_get_function(jl_current_module, funcname);
+		if (jl_exception_occurred() || func == NULL) {
+	        SF_error("function not found\n");
+			return 1010;
+		}
+		jl_call0(func);
+		SJ_set_matrices();
 		SJ_set_macros();
 		return rc;
 }
 
-int SJ_get_macros() {
-    jl_value_t *ret = jl_eval_string("macros");
+int SJ_get_matrices() {
+	jl_value_t *ret = jl_eval_string("get_matrices");
     if (jl_exception_occurred()) {
-        printf("macros not found, %s \n", jl_typeof_str(jl_exception_occurred()));
+        SF_display("get_matrices not found\n");
 		return 1;
 	}
     char *str = jl_string_ptr(ret);
-    char *macroname = strtok(str, " ");
-    while( macroname != NULL ) {
-		char macname[80];
+    char *name = strtok(str, " ");
+    while( name != NULL ) {
+		jl_array_t *x = SJ_get_matrix(name);
+		jl_function_t *func = jl_get_function(jl_current_module, "addMatrix");
+		if (jl_exception_occurred() || func == NULL) {
+	        SF_error("function addMatrix not found\n");
+			return 1010;
+		}
+	  	jl_value_t *jname = jl_cstr_to_string(name);
+	    jl_call2(func, jname, x);
+		if (jl_exception_occurred())
+	        SF_display("setting of matrix in Julia failed\n");
+		// Get next name
+        name = strtok(NULL, " ");
+    }
+    return 0;
+}
+
+int SJ_set_matrices() {
+	jl_value_t *ret = jl_eval_string("set_matrices");
+    if (jl_exception_occurred()) {
+        SF_display("set_matrices not found\n");
+		return 1;
+	}
+    char *str = jl_string_ptr(ret);
+    char *name = strtok(str, " ");
+    while( name != NULL ) {
 		char command[80];
-		SF_macro_use(macroname, macname, 80);
-		snprintf(command, 80, "addtodict(\"%s\", \"%s\")", macroname, macname);
+		snprintf(command, 80, "getMatrix(\"%s\")", name);
+		jl_value_t *x = jl_eval_string(command);
+	  	if (jl_exception_occurred()) {
+	  		SF_error("Could not get array from Julia\n");
+	  		return 1;
+	  	}
+		SJ_set_matrix(name, (jl_array_t *)x);
+		// Get next name
+        name = strtok(NULL, " ");
+    }
+    return 0;
+}
+
+int SJ_get_macros() {
+    jl_value_t *ret = jl_eval_string("get_macros");
+    if (jl_exception_occurred()) {
+        printf("get_macros not found, %s \n", jl_typeof_str(jl_exception_occurred()));
+		return 1;
+	}
+    char *str = jl_string_ptr(ret);
+    char *name = strtok(str, " ");
+    while( name != NULL ) {
+		char content[80];
+		char command[80];
+		SF_macro_use(name, content, 80);
+		snprintf(command, 80, "addMacro(\"%s\", \"%s\")", name, content);
 		jl_eval_string(command);
 		if (jl_exception_occurred())
 	        SF_display("setting failed\n");
-		// Get next macroname
-        macroname = strtok(NULL, " ");
+		// Get next name
+        name = strtok(NULL, " ");
     }
     return 0;
 }
 
 int SJ_set_macros() {
-    jl_value_t *ret = jl_eval_string("setmacros");
+    jl_value_t *ret = jl_eval_string("set_macros");
     if (jl_exception_occurred()) {
-        printf("setmacros not found, %s \n", jl_typeof_str(jl_exception_occurred()));
+        SF_display("set_macros not found\n");
 		return 1;
 	}
     char *str = jl_string_ptr(ret);
-    char *macroname = strtok(str, " ");
-    while( macroname != NULL ) {
-		char* macname;
+    char *name = strtok(str, " ");
+    while( name != NULL ) {
+		char* content;
 		char command[80];
-		snprintf(command, 80, "getfromdict(\"%s\")", macroname);
+		snprintf(command, 80, "getMacro(\"%s\")", name);
 		ret = jl_eval_string(command);
 		if (jl_exception_occurred())
 			SF_display("getting failed\n");
-		macname = jl_string_ptr(ret);
-		SF_macro_save(macroname, macname);
-		// Get next macroname
-        macroname = strtok(NULL, " ");
+		content = jl_string_ptr(ret);
+		SF_macro_save(name, content);
+		// Get next name
+        name = strtok(NULL, " ");
     }
     return 0;
 }
-
-// Set Julia global array with name
-int SJ_set_jl_var(char* name, jl_value_t *x) {
-	jl_function_t *func = jl_get_function(jl_current_module, "doubleall");
-	// jl_get_function(jl_base_module, "reverse");
-	if (jl_exception_occurred()) {
-		SF_display("set_global_var() not found in init.jl\n");
-		return 1;
-	}
-	// jl_call2(func, name, x);
-	// SF_display("HEJ");
-	// if (jl_exception_occurred()) {
-	//   SF_display("Could not set global var in Julia.\n");
-	// 	return 1;
-	// }
-}
-
-// Get Julia global array by name
-jl_value_t *SJ_get_jl_var(char* name) {
-	jl_value_t *ret = jl_eval_string(name);
-	if (jl_exception_occurred()) {
-		char errbuf[80];
-	  snprintf(errbuf, 80, "Could not get Julia var: %s\n", name) ;
-	  SF_display(errbuf);
-		return NULL;
-	}
-}
-
 
 // Get Stata global array by name
 jl_array_t *SJ_get_matrix(char* name) {
@@ -189,7 +181,6 @@ int SJ_set_matrix(char* name, jl_array_t *x) {
 
 	// Get array pointer
     double *xData = (double*)jl_array_data(x);
-
 	for( i = 0; i < rows; i++) {
 		for( j = 0; j < cols; j++) {
 			z = xData[j + cols * i];

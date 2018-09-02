@@ -1,58 +1,35 @@
-# test.jl
+# init.jl
 
-matrices = ["A" "B"]
-inmatrix = "A"
-outmatrix = "B"
 
-# Should set a bunch of vars
-function set_global_var(s::AbstractString, v::Any)
-         s = Symbol(s)
-         @eval (($s) = ($v))
+global_macro = Dict()
+matrix = Dict()
+dataset = Dict() # Create a data frame instead
+
+function addMacro(x::String, y)
+    global_macro[x] = y
 end
 
-function modify_global_var()
-    global W = 32
+function getMacro(x::String)
+    global_macro[x]
 end
 
-
-function doubleall(x::Array, y::Array)
-     y[:] = 2.*x
+function addMatrix(x::String, y)
+    matrix[x] = y
 end
 
- function testf(x::Array)
-     y = 2.*x
-     x = y
- end
-
-function f(x::String)
-    "X"
-    # ("X", "Y")
+function getMatrix(x::String)
+    matrix[x]
 end
 
-g(x,y) = x + 2y
+################### USER DEFINED ######################
 
-h(x...) = min(x...)
+get_macros = "global1 global2"
+set_macros = "global1 global2"
+get_matrices = "A B"
+set_matrices = "A B"
+get_variables = "A B"
+set_variables = "A B"
 
-rev = reverse!
-
-function testf!(x::Array)
-     x[:] = 2 .* x
-end
-
-set_global_var("x", 2)
-
-# Handle variables
-
-macros = "global1 global2"
-setmacros = "global1 global2"
-matrices = "A B"
-
-dict = Dict()
-
-function addtodict(x::String, y)
-    dict[x] = y
-end
-
-function getfromdict(x::String)
-    dict[x]
+function transpose_matrix()
+    matrix["B"] = transpose(matrix["A"])
 end
