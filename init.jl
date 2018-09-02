@@ -41,4 +41,18 @@ end
 
 set_global_var("x", 2)
 
-x
+# Handle variables
+
+macros = "global1 global2"
+setmacros = "global1 global2"
+matrices = "A B"
+
+dict = Dict()
+
+function addtodict(x::String, y)
+    dict[x] = y
+end
+
+function getfromdict(x::String)
+    dict[x]
+end

@@ -8,7 +8,7 @@ void printit(jl_value_t *ret) {
       printf("Value: %f \n", ret_unboxed);
   }
   else {
-      printf("ERROR: unexpected return type from sqrt(::Float64)\n");
+      printf("ERROR: Unexpected return type from sqrt(::Float64)\n");
   }
 }
 
@@ -41,9 +41,10 @@ void print_array(jl_array_t *x) {
   double *xData = (double*)jl_array_data(x);
   size_t size0 = jl_array_dim(x,0);
   size_t size1 = jl_array_dim(x,1);
-  for(size_t i=0; i<size1; i++) {
-      for(size_t j=0; j<size0; j++)
-        printf("%f, ", xData[j + size0*i] );
+  for(size_t j=0; j<size0; j++) {
+      for(size_t i=0; i<size1; i++) {
+          printf("%.2f\t", xData[j + size0*i] );
+      }
       printf("\n" );
   }
 }

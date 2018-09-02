@@ -1,5 +1,6 @@
 #include <julia.h>
 #include "julia_fun.h"
+#include <string.h>
 
 JULIA_DEFINE_FAST_TLS();
 
@@ -37,10 +38,10 @@ int communicate(int argc, char *argv[]) {
   jl_value_t *ret2 = jl_call(func2, argument, 4);
   printit(ret2);
   JL_GC_POP();
-
-  create_vector();
-  printf("\n" );
+  // Array operations
+  // create_vector();
+  // printf("\n" );
   create_array();
-  printf("\n" );
+  // printf("\n" );
   return 0;
 }

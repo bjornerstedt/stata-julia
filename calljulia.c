@@ -27,13 +27,13 @@ int SJ_process(char* array1, char* array2, char *method)
 		}
 		rc = SJ_set_matrix(array2, x);
 		{
-			// TEST setting and getting a global var in Julia
-			jl_value_t *y = jl_box_float64(8.0);
-			SJ_set_jl_var("W", y);
-			if (jl_exception_occurred()) {
-				SF_error("Error");
-				return 2;
-			}
+			// // TEST setting and getting a global var in Julia
+			// jl_value_t *y = jl_box_float64(8.0);
+			// SJ_set_jl_var("W", y);
+			// if (jl_exception_occurred()) {
+			// 	SF_error("Error");
+			// 	return 2;
+			// }
 			// y = SJ_get_jl_var("W");
 			// char errbuf[80];
 			// double ret = jl_unbox_float64(y);
@@ -41,7 +41,57 @@ int SJ_process(char* array1, char* array2, char *method)
 			// SF_display(errbuf);
 
 		}
+		SJ_get_macros();
+		jl_eval_string("dict[\"global1\"] = \"999\"");
+		jl_eval_string("dict[\"global2\"] = \"1001\"");
+
+		SJ_set_macros();
 		return rc;
+}
+
+int SJ_get_macros() {
+    jl_value_t *ret = jl_eval_string("macros");
+    if (jl_exception_occurred()) {
+        printf("macros not found, %s \n", jl_typeof_str(jl_exception_occurred()));
+		return 1;
+	}
+    char *str = jl_string_ptr(ret);
+    char *macroname = strtok(str, " ");
+    while( macroname != NULL ) {
+		char macname[80];
+		char command[80];
+		SF_macro_use(macroname, macname, 80);
+		snprintf(command, 80, "addtodict(\"%s\", \"%s\")", macroname, macname);
+		jl_eval_string(command);
+		if (jl_exception_occurred())
+	        SF_display("setting failed\n");
+		// Get next macroname
+        macroname = strtok(NULL, " ");
+    }
+    return 0;
+}
+
+int SJ_set_macros() {
+    jl_value_t *ret = jl_eval_string("setmacros");
+    if (jl_exception_occurred()) {
+        printf("setmacros not found, %s \n", jl_typeof_str(jl_exception_occurred()));
+		return 1;
+	}
+    char *str = jl_string_ptr(ret);
+    char *macroname = strtok(str, " ");
+    while( macroname != NULL ) {
+		char* macname;
+		char command[80];
+		snprintf(command, 80, "getfromdict(\"%s\")", macroname);
+		ret = jl_eval_string(command);
+		if (jl_exception_occurred())
+			SF_display("getting failed\n");
+		macname = jl_string_ptr(ret);
+		SF_macro_save(macroname, macname);
+		// Get next macroname
+        macroname = strtok(NULL, " ");
+    }
+    return 0;
 }
 
 // Set Julia global array with name
@@ -53,7 +103,7 @@ int SJ_set_jl_var(char* name, jl_value_t *x) {
 		return 1;
 	}
 	// jl_call2(func, name, x);
-	SF_display("HEJ");
+	// SF_display("HEJ");
 	// if (jl_exception_occurred()) {
 	//   SF_display("Could not set global var in Julia.\n");
 	// 	return 1;
@@ -88,7 +138,7 @@ jl_array_t *SJ_get_matrix(char* name) {
 	}
 
 	// Create 2D array of float64 type
-  jl_value_t *array_type = jl_apply_array_type((jl_value_t*)jl_float64_type, 2);
+    jl_value_t *array_type = jl_apply_array_type((jl_value_t*)jl_float64_type, 2);
 	if (jl_exception_occurred()) {
 		SF_error("Could not allocate memory 1.\n");
 		return NULL;
@@ -101,7 +151,7 @@ jl_array_t *SJ_get_matrix(char* name) {
 	}
 
 	// Get array pointer
-  double *xData = (double*)jl_array_data(x);
+    double *xData = (double*)jl_array_data(x);
 
 	for( i = 0; i < rows; i++) {
 		for( j = 0; j < cols; j++) {
@@ -138,7 +188,7 @@ int SJ_set_matrix(char* name, jl_array_t *x) {
 	}
 
 	// Get array pointer
-  double *xData = (double*)jl_array_data(x);
+    double *xData = (double*)jl_array_data(x);
 
 	for( i = 0; i < rows; i++) {
 		for( j = 0; j < cols; j++) {

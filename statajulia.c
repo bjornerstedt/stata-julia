@@ -5,11 +5,18 @@
 
 JULIA_DEFINE_FAST_TLS();
 
+// Stata plugin entry point
 STDLL stata_call(int argc, char *argv[])
 {
+	return main(argc, argv);
+}
+
+// C application entry point
+int main(int argc, char *argv[])
+	{
 	jl_init();
 	if (argc != 3) {
-		SF_error("Internal error. ADO file has sent the wrong number of pars");
+		SF_error("Internal error. The ADO file has sent the wrong number of pars");
 		return 1;
 	}
 	char* method = argv[0];

@@ -25,5 +25,11 @@ function testf!(x::Array)
 end
 
 function rowcol()
-    [1 2; 3 4; 5, 6]
+    return [1.0 2.0; 3.0 4.0; 5.0 6.0]
+end
+
+macros = "global1 global2"
+matrices = "A B"
+function initpars()
+     return  macros
 end
