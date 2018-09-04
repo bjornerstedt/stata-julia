@@ -1,18 +1,10 @@
 # init.jl
 
-
 global_macro = Dict()
+scalar = Dict()
 matrix = Dict()
 variable = Dict() # Create a data frame instead
 dataset = []
-
-function addMacro(x::String, y)
-    global_macro[x] = y
-end
-
-function getMacro(x::String)
-    global_macro[x]
-end
 
 function addMatrix(x::String, y)
     matrix[x] = y
@@ -28,6 +20,22 @@ end
 
 function getVariable(x::String)
     variable[x]
+end
+
+function addScalar(x::String, y)
+    global_macro[x] = y
+end
+
+function getScalar(x::String)
+    global_macro[x]
+end
+
+function addMacro(x::String, y)
+    global_macro[x] = y
+end
+
+function getMacro(x::String)
+    global_macro[x]
 end
 
 ################### USER DEFINED ######################

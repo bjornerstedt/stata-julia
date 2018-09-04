@@ -16,4 +16,4 @@ di "$global2"
 matlist A
 matlist B
 
-julia n v nv, using(init.jl)  function(test_get_set)
+* julia n v nv, using(init.jl)  function(test_get_set)

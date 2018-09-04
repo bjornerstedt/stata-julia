@@ -7,7 +7,7 @@
 int SJ_process(char *funcname, char *varlist)
 {
 		int rc = 0;
-		SJ_get_macros();
+		SJ_get_macros_scalars();
 		SJ_get_matrices();
 		SJ_get_dataset();
 
@@ -18,8 +18,8 @@ int SJ_process(char *funcname, char *varlist)
 		}
 		jl_call0(func);
 		SJ_set_matrices();
-		SJ_set_macros();
-		SJ_get_set_variables(1);
+		SJ_set_macros_scalars();
+		SJ_set_dataset();
 		return rc;
 }
 
@@ -64,15 +64,12 @@ int SJ_set_matrices() {
     return 0;
 }
 
-// This function is called to get and set variables that
-// can be modified in Julia
-int SJ_get_set_variables(int update) {
-	char *vars = NULL;
-	get_julia_var("get_variables", &vars);
-	char *setvars = NULL;
-	get_julia_var("set_variables", &setvars);
-
-    char *name = strtok(setvars, " ");
+int SJ_set_dataset() {
+	// Get array of strings from Julia, where strings are empty (or perhaps NULL)
+	// unless it is a variable to write.
+	char *str = NULL;
+	get_julia_var("set_variables", &str);
+    char *name = strtok(str, " ");
     while( name != NULL ) {
 		char command[80];
 		snprintf(command, 80, "getVariable(\"%s\")", name);
@@ -89,28 +86,30 @@ int SJ_get_set_variables(int update) {
     return 0;
 }
 
-int SJ_get_macros() {
+int SJ_get_macros_scalars() {
 	char juliaGlobal[2];
 	juliaGlobal[0] = "get_macros";
-	juliaGlobal[1] = "set_macros";
-	char *str = NULL;
-	get_julia_var("get_macros", &str);
-    char *name = strtok(str, " ");
-    while( name != NULL ) {
-		char content[80];
-		char command[80];
-		SF_macro_use(name, content, 80);
-		snprintf(command, 80, "addMacro(\"%s\", \"%s\")", name, content);
-		jl_eval_string(command);
-		if (jl_exception_occurred())
-	        SF_display("setting failed\n");
-		// Get next name
-        name = strtok(NULL, " ");
-    }
+	juliaGlobal[1] = "get_scalars";
+	for (size_t i = 0; i < 2; i++) {
+		char *str = NULL;
+		get_julia_var("get_macros", &str);
+	    char *name = strtok(str, " ");
+	    while( name != NULL ) {
+			char content[80];
+			char command[80];
+			SF_macro_use(name, content, 80);
+			snprintf(command, 80, "addMacro(\"%s\", \"%s\")", name, content);
+			jl_eval_string(command);
+			if (jl_exception_occurred())
+		        SF_display("setting failed\n");
+			// Get next name
+	        name = strtok(NULL, " ");
+	    }
+	}
     return 0;
 }
 
-int SJ_set_macros() {
+int SJ_set_macros_scalars() {
 	char *str = NULL;
 	get_julia_var("set_macros", &str);
     char *name = strtok(str, " ");
@@ -132,9 +131,28 @@ int SJ_set_macros() {
 int SJ_get_dataset() {
 	ST_int cols = SF_nvars();
 	if (cols == 0) {
-		return 1;
+		// It is OK to not have a dataset
+		return 0;
 	}
 	ST_int rows = SF_in2() ;
+
+	// the Dict with variables to be set has to be created
+	char *str = NULL;
+	get_julia_var("set_variables", &str);
+
+	char *name = strtok(str, " ");
+    while( name != NULL ) {
+		char* content;
+		char command[80];
+		snprintf(command, 80, "addVariable(\"%s\")", name);
+		jl_value_t* ret = jl_eval_string(command);
+		if (jl_exception_occurred())
+			SF_display("getting failed\n");
+		content = jl_string_ptr(ret);
+		SF_macro_save(name, content);
+		// Get next name
+        name = strtok(NULL, " ");
+    }
 
 
 	// Create 2D array of float64 type
@@ -149,6 +167,7 @@ int SJ_get_dataset() {
 		return 99;
 	}
 
+	// Copy data from Stata to Julia
 	double *xData = (double*)jl_array_data(x);
 	ST_double z;
 	ST_retcode rc ;
@@ -160,6 +179,7 @@ int SJ_get_dataset() {
 		}
 	}
 
+	// Put data in Julia global Dict
 	jl_function_t *func = jl_get_function(jl_current_module, "addDataset");
 	if (jl_exception_occurred() || func == NULL) {
 		SF_error("function addDataset not found\n");
@@ -191,6 +211,7 @@ jl_array_t *SJ_get_matrix(char* name) {
 		SF_error("Could not allocate memory 1.\n");
 		return NULL;
 	}
+
 	jl_array_t *x  = jl_alloc_array_2d(array_type, rows, cols);
 	if (jl_exception_occurred()) {
 		SF_error("Could not allocate memory.\n");

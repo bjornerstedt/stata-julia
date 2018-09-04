@@ -12,6 +12,6 @@ int SJ_set_macros();
 int SJ_get_matrices();
 int SJ_set_matrices();
 int SJ_get_dataset();
-int SJ_set_dataset();
+int SJ_get_set_variables(int update);
 int getIndices(char* list, char* list2, int tokenIndex[]);
 int get_julia_var(char *varname, char** str);
