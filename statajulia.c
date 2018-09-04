@@ -15,19 +15,20 @@ STDLL stata_call(int argc, char *argv[])
 int main(int argc, char *argv[])
 	{
 	jl_init();
-	if (argc != 3) {
+	if (argc != 4) {
 		SF_error("Internal error. The ADO file has sent the wrong number of pars");
 		return 1;
 	}
-	char* method = argv[0];
+	char* function = argv[0];
 	char* using = argv[1];
 	char* command = argv[2];
+	char* varlist = argv[3];
 
 	if (strlen(using) == 0) {
 		return SJ_execute_command(command);
 	}
-	if (strlen(method) == 0) {
-		SF_error("Either method or command has to be specified.\n");
+	if (strlen(function) == 0) {
+		SF_error("Either function or command has to be specified.\n");
 		return 1;
 	}
 
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Invoke command
-	retval = SJ_process( method);
+	retval = SJ_process( function, varlist);
 
 	jl_atexit_hook(0);
 	return(retval) ;

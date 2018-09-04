@@ -4,7 +4,7 @@
 #include "statajulia.h"
 
 // Invoked by main funcname stata_call
-int SJ_process(char *funcname)
+int SJ_process(char *funcname, char *varlist)
 {
 		int rc = 0;
 		SJ_get_macros();
@@ -19,6 +19,7 @@ int SJ_process(char *funcname)
 		jl_call0(func);
 		SJ_set_matrices();
 		SJ_set_macros();
+		SJ_set_dataset();
 		return rc;
 }
 
@@ -38,7 +39,7 @@ int SJ_get_matrices() {
 			return 1010;
 		}
 	  	jl_value_t *jname = jl_cstr_to_string(name);
-	    jl_call2(func, jname, x);
+	    jl_call2(func, jname, (jl_value_t *)x);
 		if (jl_exception_occurred())
 	        SF_display("setting of matrix in Julia failed\n");
 		// Get next name
@@ -48,12 +49,9 @@ int SJ_get_matrices() {
 }
 
 int SJ_set_matrices() {
-	jl_value_t *ret = jl_eval_string("set_matrices");
-    if (jl_exception_occurred()) {
-        SF_display("set_matrices not found\n");
-		return 1;
-	}
-    char *str = jl_string_ptr(ret);
+	char *str = NULL;
+	get_julia_var("set_matrices", &str);
+
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		char command[80];
@@ -63,7 +61,7 @@ int SJ_set_matrices() {
 	  		SF_error("Could not get array from Julia\n");
 	  		return 1;
 	  	}
-		SJ_set_matrix(name, (jl_array_t *)x);
+		SJ_set_matrix(name, (jl_array_t *)x, 0);
 		// Get next name
         name = strtok(NULL, " ");
     }
@@ -71,22 +69,21 @@ int SJ_set_matrices() {
 }
 
 int SJ_set_dataset() {
-	jl_value_t *ret = jl_eval_string("set_variables");
-    if (jl_exception_occurred()) {
-        SF_display("set_variables not found\n");
-		return 1;
-	}
-    char *str = jl_string_ptr(ret);
+	// Get array of strings from Julia, where strings are empty (or perhaps NULL)
+	// unless it is a variable to write.
+	char *str = NULL;
+	get_julia_var("set_variables", &str);
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		char command[80];
 		snprintf(command, 80, "getVariable(\"%s\")", name);
+		SF_display(command);
 		jl_value_t *x = jl_eval_string(command);
 	  	if (jl_exception_occurred()) {
 	  		SF_error("Could not get array from Julia\n");
 	  		return 1;
 	  	}
-		SJ_set_matrix(name, (jl_array_t *)x);
+		SJ_set_matrix(name, (jl_array_t *)x, 0);
 		// Get next name
         name = strtok(NULL, " ");
     }
@@ -177,7 +174,7 @@ int SJ_get_dataset() {
 		SF_error("function addDataset not found\n");
 		return 1010;
 	}
-	jl_call1(func, x);
+	jl_call1(func, (jl_value_t *)x);
 	if (jl_exception_occurred())
 		SF_display("setting of dataset in Julia failed\n");
     return 0;
@@ -217,21 +214,31 @@ jl_array_t *SJ_get_matrix(char* name) {
 	for( i = 0; i < rows; i++) {
 		for( j = 0; j < cols; j++) {
 			// NOTE that Stata uses 1 based index!
-			if((rc = SF_mat_el(name, i + 1, j + 1, &z))) return(rc) ;
+			if(SF_mat_el(name, i + 1, j + 1, &z)) return(NULL) ;
 			xData[j + cols*i] = z;
 		}
 	}
 	return x;
 }
 
-int SJ_set_matrix(char* name, jl_array_t *x) {
+// Set either by name (matrices) or by index (variables)
+int SJ_set_matrix(char* name, jl_array_t *x, int var_index) {
 	char errbuf[80] ;
-	ST_int rows = SF_row(name);
-	ST_int cols = SF_col(name);
+	ST_int rows, cols, min_cols;
+	if (var_index) {
+		rows = SF_in2() ;
+		 // Only set column var_index if it is a variable
+		cols = var_index;
+		min_cols = var_index - 1;
+	} else {
+		min_cols = 0;
+		rows = SF_row(name);
+		cols = SF_col(name);
+	}
 
 	ST_int i, j;
 	ST_retcode rc ;
-	ST_double z, w;
+	ST_double z;
 
 	if (rows == 0) {
 	  snprintf(errbuf, 80, "Could not get matrix: %s\n", name) ;
@@ -251,10 +258,15 @@ int SJ_set_matrix(char* name, jl_array_t *x) {
 	// Get array pointer
     double *xData = (double*)jl_array_data(x);
 	for( i = 0; i < rows; i++) {
-		for( j = 0; j < cols; j++) {
+		for( j = min_cols; j < cols; j++) {
 			z = xData[j + cols * i];
 			// NOTE that Stata uses 1 based index!
-			if((rc = SF_mat_store(name, i + 1, j + 1, z))) return(rc) ;
+			if (var_index) {
+				if((rc = SF_vstore(var_index, j + 1, z))) return(rc) ;
+
+			} else {
+				if((rc = SF_mat_store(name, i + 1, j + 1, z))) return(rc) ;
+			}
 		}
 	}
 	return 0;
@@ -290,4 +302,50 @@ int SJ_execute_command(char *command) {
 		SF_display(buf);
 		return 0;
 	}
+}
+
+// Get token positions of tokens in list2 in list and return in tokenIndex
+int getIndices(char* list, char* list2, int tokenIndex[]) {
+    char* token[80];
+    int i = 0;
+    char *name = strtok(list, " ");
+    while( name != NULL ) {
+        char command[80];
+        token[i++] = name;
+        name = strtok(NULL, " ");
+    }
+    int token1count = i;
+
+    char* token2[80];
+    i = 0;
+    name = strtok(list2, " ");
+    while( name != NULL ) {
+        char command[80];
+        token2[i++] = name;
+        name = strtok(NULL, " ");
+    }
+    int token2count = i;
+
+    name = strtok(list, " ");
+    for (i = 0; i < token2count; i++) {
+        for (size_t j = 0; j < token1count; j++) {
+            if (!strcmp(token2[i], token[j]) ) {
+                tokenIndex[i] = j + 1; // Stata is 1 based
+            }
+        }
+    }
+    return 0;
+}
+
+// Get global string var from Julia
+int get_julia_var(char *varname, char** str) {
+	jl_value_t *ret = jl_eval_string(varname);
+	if (jl_exception_occurred()) {
+		char command[80];
+		snprintf(command, 80, "Could not get Julia var: %s\n", varname);
+		SF_display(command);
+		return 1;
+	}
+	*str = jl_string_ptr(ret);
+	return 0;
 }

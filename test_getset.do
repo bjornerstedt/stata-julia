@@ -10,10 +10,10 @@ matrix A = (1,2\3,4)
 matrix B = A
 global global1 "Hejsan"
 global global2 33.3
-julia , using(init.jl)  method(transpose_matrix)
+julia , using(init.jl)  function(test_get_set)
 di "$global1"
 di "$global2"
 matlist A
 matlist B
 
-julia n v nv, using(init.jl)  method(transpose_matrix)
+julia n v nv, using(init.jl)  function(test_get_set)

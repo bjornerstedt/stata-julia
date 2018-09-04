@@ -12,19 +12,19 @@ scalar x = 2
 matrix A = (1,2\3,4)
 
 matrix B = A
-julia , method(identity) using(init.jl)
+julia , function(identity) using(init.jl)
 matlist B
 
 matrix A = (1,2\3,4\5,6)
 
 matrix B = A
-julia , method(g) using(init.jl)
+julia , function(g) using(init.jl)
 matlist B
 
 matrix A = (1,2,3,4)
 
 matrix B = A
-julia , command(test) using(init.jl)  method(g)
+julia , command(test) using(init.jl)  function(g)
 matlist B
 
 julia , command(a=2+2)

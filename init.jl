@@ -26,7 +26,7 @@ function addDataset(y)
     dataset = y
 end
 
-function getVariableIndices(x::String)
+function getVariable(x::String)
     variable[x]
 end
 
@@ -39,6 +39,7 @@ set_matrices = "A B"
 get_variables = "n v nv"
 set_variables = "nv"
 
-function transpose_matrix()
+function test_get_set()
     matrix["B"] = transpose(matrix["A"])
+    global_macro["global1"] = "Test"
 end

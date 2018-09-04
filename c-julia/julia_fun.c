@@ -7,7 +7,7 @@ JULIA_DEFINE_FAST_TLS();
 int main(int argc, char *argv[]) {
     jl_init();
     //  Load init.jl if it exists.
-    jl_eval_string("include(\"init.jl\")");
+    jl_eval_string("include(\"inittest.jl\")");
     if (jl_exception_occurred())
       printf("File init.jl not found, %s \n", jl_typeof_str(jl_exception_occurred()));
     int retval = communicate(argc, argv);
