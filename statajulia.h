@@ -15,3 +15,7 @@ int SJ_get_dataset();
 int SJ_get_set_variables(int update);
 int getIndices(char* list, char* list2, int tokenIndex[]);
 int get_julia_var(char *varname, char** str);
+jl_value_t *call_julia(char *funcname, jl_value_t* x, jl_value_t* y);
+jl_array_t* create_2D(int rows, int cols);
+int SJ_get_scalars();
+int SJ_set_scalars();

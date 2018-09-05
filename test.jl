@@ -46,3 +46,5 @@ Ab
 using DataFrames
 
 df = convert( DataFrame,A)
+
+split("Hej hå", ' ' )
