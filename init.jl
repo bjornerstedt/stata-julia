@@ -3,7 +3,7 @@
 global_macro = Dict()
 scalar = Dict()
 matrix = Dict()
-variable = Dict() # Create a data frame instead
+var = Dict()
 dataset = []
 
 function addMatrix(x::String, y)
@@ -18,8 +18,11 @@ function addDataset(y)
     dataset = y
 end
 
+function addVariable(x::String, y)
+    var[x] = y
+end
 function getVariable(x::String)
-    variable[x]
+    var[x]
 end
 
 function addScalar(x::String, y)
@@ -45,7 +48,7 @@ set_macros = "global1 global2"
 get_matrices = "A B"
 set_matrices = "A B"
 get_variables = "n v nv"
-set_variables = "nv"
+set_variables = " v nv"
 get_scalars = "scalar1"
 set_scalars = "scalar1 scalar2"
 
@@ -55,4 +58,5 @@ function test_get_set()
     global_macro["global2"] =  "ss"
     scalar["scalar1"] = 2*scalar["scalar1"]
     scalar["scalar2"] = 2.1
+    var["nv"] = 2.*var["v"]
 end

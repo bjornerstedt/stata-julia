@@ -12,7 +12,7 @@ TestModule.f()
 TestModule.f(6)
 x = [1.0 2 3; 4 5 6]
 
-
+addScalar["Test", [2.2 3]]
 x
 
 A = [1 2 3; 4 5 6; 7 8 9]
