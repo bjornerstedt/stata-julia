@@ -4,8 +4,8 @@ Stata to Julia interface
 A [Stata C Plugin](https://www.stata.com/plugins/) to
 [interface with Julia](https://docs.julialang.org/en/stable/manual/embedding/#High-Level-Embedding-1).
 
-The program simplecall takes a Julia command as string and returns a Stata scalar.
-Run `test.sh` to test the program.
+The program simplecall takes a Julia command as string and returns a Stata scalar. It is
+in the package directory. Run `test.sh` to test the program.
 
 The interface works as follows:
 
@@ -28,15 +28,17 @@ The __stata-julia__ interface is not as ambitious as for example the R package `
 To invoke Julia from Stata, the `julia` program is invoked. The syntax is
 
 ```
-julia [varlist] [if] [in] , method(string) using(string) [command(string)] [all]
+julia [varlist] , function(string) using(string) [command(string)] [all]
 ```
 
-* method - is the method to invoke
 * using - is the Julia script that contains init parameters and the method to invoke.
+* function - is the method to invoke, defined in the using file
 * command - can be used to simply invoke a command without creating a script.
 * all - import all matrices, macros and scalars from Stata
 
-* Note that varlist, if and in are not implemented yet.
+* Note that
+    - if and in are not implemented yet.
+    - missing values are not implemented.
 
 
 ## The Julia code
