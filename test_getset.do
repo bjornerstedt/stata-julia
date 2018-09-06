@@ -5,6 +5,7 @@ set obs 5
 gen n = _n
 gen v = exp(n)
 gen nv = 0.0
+mkmat nv , matrix( nvm)
 
 matrix A = (1,2\3,4)
 matrix B = A
@@ -20,3 +21,4 @@ di scalar1
 di scalar2
 list
 * julia n v nv, using(init.jl)  function(test_get_set)
+matlist nvm

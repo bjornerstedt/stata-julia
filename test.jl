@@ -26,15 +26,30 @@ function g(x)
      global B = x
 end
 
-dict = Dict()
 
-function addtodict(x::String, y)
-    dict[x] = y
+get_variables = "n v nv"
+set_variables = " v nv "
+
+function getVarIndices(n::Integer)
+    if length(set_variables) < n || n <= 0
+        return("")
+    end
+    set_names = split(strip(set_variables), r" +")
+    get_names = split(strip(set_variables), r" +")
+    get_names[n]
 end
 
-function getfromdict(x::String)
-    dict[x]
+function getVarIndices(n::Integer)
+    if length(set_variables) < n || n <= 0
+        return("")
+    end
+    set_names = split(strip(set_variables), r" +")
+    get_names = split(strip(set_variables), r" +")
+    get_names[n]
 end
+
+getVarIndex(-1)
+
 
 addtodict("HÅ",1)
 addtodict("HEJ",1)
@@ -48,3 +63,19 @@ using DataFrames
 df = convert( DataFrame,A)
 
 split("Hej hå", ' ' )
+addMacro("test", 2)
+
+test_get_set()
+
+b=IOBuffer()
+show(b, "text/plain", rand(3,3))
+write(b,"abc")
+print(String(b))
+
+function testPrint()
+    b=IOBuffer()
+    show(b, "text/plain", rand(3,3))
+    # write(b,"abc")
+    String(b)
+end
+testPrint()

@@ -41,16 +41,47 @@ function getMacro(x::String)
     global_macro[x]
 end
 
+printBuffer = IOBuffer()
+
+function getPrintBuffer()
+    String(printBuffer)
+end
+
+
 ################### USER DEFINED ######################
 
 get_macros = "global1 global2"
 set_macros = "global1 global2"
-get_matrices = "A B"
-set_matrices = "A B"
+get_matrices = "A B nvm"
+set_matrices = "A B nvm"
 get_variables = "n v nv"
-set_variables = " v nv"
+set_variables = "v nv"
 get_scalars = "scalar1"
 set_scalars = "scalar1 scalar2"
+
+function nameGetVar(n::Integer)
+    names = split(strip(get_variables), r" +")
+    if length(names) < n || n < 1
+        return("")
+    end
+    return String(names[n])
+end
+
+function nameSetVar(n::Integer)
+    names = split(strip(set_variables), r" +")
+    if length(names) < n || n < 1
+        return("")
+    end
+    return String(names[n])
+end
+
+function printToBuffer()
+    # result = var["v"]
+    result = "Hejsan"
+    write(printBuffer,"Print Output:\n")
+    show(printBuffer, "text/plain", result)
+    write(printBuffer,"\n")
+end
 
 function test_get_set()
     matrix["B"] = transpose(matrix["A"])
@@ -58,5 +89,6 @@ function test_get_set()
     global_macro["global2"] =  "ss"
     scalar["scalar1"] = 2*scalar["scalar1"]
     scalar["scalar2"] = 2.1
-    var["nv"] = 2.*var["v"]
+    var["nv"] = 3.*var["v"]
+    matrix["nvm"] = 2.*var["v"]
 end

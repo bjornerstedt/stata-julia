@@ -3,8 +3,26 @@
 #include <strings.h>
 #include "statajulia.h"
 
+// print Julia buffer
+int displayPrintBuffer() {
+    jl_value_t* ret;
+    ret = jl_eval_string("getPrintBuffer()");
+    if (jl_exception_occurred())
+        SF_error("Failed getting the print Buffer from Julia\n");
+    // jl_string_ptr(ret);
+    SF_display(jl_string_ptr(ret));
+}
+
+// execute Julia command
+int jexec(char *command) {
+    jl_value_t* ret;
+    ret = jl_eval_string(command);
+    if (jl_exception_occurred())
+        SF_error("Failed getting the print Buffer from Julia\n");
+}
+
 // Get global string var from Julia
-int get_julia_var(char *varname, char** str) {
+int get_julia_string(char *varname, char** str) {
 	jl_value_t *ret = jl_eval_string(varname);
 	if (jl_exception_occurred()) {
 		char command[80];
@@ -82,7 +100,7 @@ jl_value_t *call_julia(char *funcname, jl_value_t* x, jl_value_t* y) {
 		rv = jl_call2(func, x, y);
 	}
 	if (jl_exception_occurred() || rv == NULL) {
-		SF_display("Calling Julia function failed\n");
+        SF_display("call_julia: Calling Julia function failed\n");
 		return NULL;
 	}
 	return rv;

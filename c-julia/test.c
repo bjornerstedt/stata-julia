@@ -5,8 +5,8 @@ int getIndices(char* list, char* list2, int tokenIndex[]);
 
 int main(int argc, char *argv[]) {
 
-    char list[] = " Hej   Hå Så ";
-    char list2[] = "Så Så";
+    char list[] = " n v nv ";
+    char list2[] = "v nv";
     int tokenIndex[80];
      getIndices(list, list2, tokenIndex);
 

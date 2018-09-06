@@ -11,7 +11,8 @@ int SJ_process(char *funcname, char *varlist)
 		SJ_get_scalars();
 		SJ_get_matrices();
 		// SJ_get_dataset();
-		SJ_get_set_variables(0);
+		SJ_get_variables();
+		jexec("printToBuffer()");
 
 		jl_function_t *func = jl_get_function(jl_current_module, funcname);
 		if (jl_exception_occurred() || func == NULL) {
@@ -22,36 +23,60 @@ int SJ_process(char *funcname, char *varlist)
 		SJ_set_matrices();
 		SJ_set_macros();
 		SJ_set_scalars();
-		SJ_get_set_variables(1);
+		SJ_set_variables();
+		displayPrintBuffer();
 		return rc;
 }
 
-// This function is called to get and set variables that
-// can be modified in Julia
-int SJ_get_set_variables(int update) {
-	char *getvars = NULL;
-	char *setvars = NULL;
+int SJ_get_variables() {
+	char* str = NULL;
 	// Variable not required to be defined
-	if( get_julia_var("get_variables", &getvars) )
+	if( get_julia_string("get_variables", &str) )
 		return 0;
-	if( get_julia_var("set_variables", &setvars) )
-		return 0;
-	int tokenIndex[80];
-    getIndices(getvars, setvars, tokenIndex);
 	jl_value_t *x = NULL;
-	int i = 0;
-    char *name = strtok(setvars, " ");
-    while( tokenIndex[i] != 0 ) { // Zero terminated array
-		if (update) {
-			if( (x = call_julia("getVariable", jl_cstr_to_string(name), NULL )) == NULL ) return 321;
-			SJ_set_matrix(NULL, (jl_array_t *)x, tokenIndex[i]);
-		} else {
-			if( (x = SJ_get_matrix(name, tokenIndex[i]) ) == NULL) return 234;
-			if( call_julia("addVariable", jl_cstr_to_string(name) , (jl_value_t *)x ) == NULL ) return 321;
+	int i = 1;
+	char *name = " ";
+	char command[80];
+	snprintf(command, 80, "nameGetVar(%d)", i);
+	get_julia_string(command, &name);
+    while( strlen(name) ) {
+		if( (x = SJ_get_variable(name, i) ) == NULL) {
+			SF_error("Could not get Stata var\n");
+			return 234;
 		}
-		// Get next name
-        name = strtok(NULL, " ");
-		i++;
+		if( call_julia("addVariable", jl_cstr_to_string(name) , (jl_value_t *)x ) == NULL ) {
+			SF_error("Could not add Julia var\n");
+			return 322;
+		}
+		snprintf(command, 80, "nameGetVar(%d)", ++i);
+		get_julia_string(command, &name);
+    }
+    return 0;
+}
+
+int SJ_set_variables() {
+	char* str = NULL;
+	// Variable not required to be defined
+	if( get_julia_string("get_variables", &str) )
+		return 0;
+	jl_value_t *x = NULL;
+	int i = 1;
+	char *name = " ";
+	char command[80];
+	snprintf(command, 80, "nameGetVar(%d)", i);
+	get_julia_string(command, &name);
+    while( strlen(name) && i < 4) {
+		snprintf(command, 80, "getVariable(\"%s\")", name);
+		if( (x = jl_eval_string(command)) == NULL ) {
+			SF_error("Could not get Julia var\n");
+			return 321;
+		}
+		if(SJ_set_variable(name, i, (jl_array_t *)x)) {
+			SF_error("Could not set Stata var\n");
+			return 234;
+		}
+		snprintf(command, 80, "nameGetVar(%d)", ++i);
+		get_julia_string(command, &name);
     }
     return 0;
 }
@@ -81,11 +106,11 @@ int SJ_get_dataset() {
 int SJ_get_matrices() {
 	char *str = NULL;
 	// Variable not required to be defined
-	if( get_julia_var("get_matrices", &str) )
+	if( get_julia_string("get_matrices", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
-		jl_array_t *x = SJ_get_matrix(name, 0);
+		jl_array_t *x = SJ_get_matrix(name);
 		jl_function_t *func = jl_get_function(jl_current_module, "addMatrix");
 		if (jl_exception_occurred() || func == NULL) {
 	        SF_error("function addMatrix not found\n");
@@ -105,7 +130,7 @@ int SJ_set_matrices() {
 	char *str = NULL;
 
 	// Variable not required to be defined
-	if( get_julia_var("set_matrices", &str) )
+	if( get_julia_string("set_matrices", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
@@ -116,7 +141,7 @@ int SJ_set_matrices() {
 	  		SF_error("Could not get array from Julia\n");
 	  		return 1;
 	  	}
-		SJ_set_matrix(name, (jl_array_t *)x, 0);
+		SJ_set_matrix(name, (jl_array_t *)x);
 		// Get next name
         name = strtok(NULL, " ");
     }
@@ -126,7 +151,7 @@ int SJ_set_matrices() {
 int SJ_get_macros() {
 	char *str = NULL;
 	// Variable not required to be defined
-	if( get_julia_var("get_macros", &str) )
+	if( get_julia_string("get_macros", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
@@ -146,7 +171,7 @@ int SJ_get_macros() {
 int SJ_set_macros() {
 	char *str = NULL;
 	// Variable not required to be defined
-	if( get_julia_var("set_macros", &str) )
+	if( get_julia_string("set_macros", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
@@ -169,7 +194,7 @@ int SJ_get_scalars() {
 	int rc = 0;
 	ST_double d;
 	// Variable not required to be defined
-	if( get_julia_var("get_scalars", &str) )
+	if( get_julia_string("get_scalars", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
@@ -187,7 +212,7 @@ int SJ_set_scalars() {
 	int rc = 0;
 	ST_double d = 0;
 	// Variable not required to be defined
-	if( get_julia_var("set_scalars", &str) )
+	if( get_julia_string("set_scalars", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
@@ -207,25 +232,45 @@ int SJ_set_scalars() {
 }
 
 // Get Stata global array by name
-jl_array_t *SJ_get_matrix(char* name, int var_index) {
-	ST_int i, j;
+jl_array_t *SJ_get_variable(char* name, int var_index) {
+	ST_int i, j, rows;
 	ST_retcode rc ;
-	ST_int rows, cols, min_cols;
-	if (var_index) {
-		rows = SF_in2() ;
-		 // Only set column var_index if it is a variable
-		cols = var_index;
-		min_cols = var_index - 1;
-	} else {
-		min_cols = 0;
-		rows = SF_row(name);
-		cols = SF_col(name);
-	}
+	rows = SF_in2() ;
 
 	if (rows == 0) {
 		char errbuf[80] ;
-	  snprintf(errbuf, 80, "Could not get matrix: %s\n", name) ;
-	  SF_display(errbuf);
+	    snprintf(errbuf, 80, "Could not get matrix: %s\n", name) ;
+	    SF_display(errbuf);
+		return NULL;
+	}
+
+	jl_array_t *x;
+	if( (x = create_2D(rows, 1)) == NULL ) return 123;
+    double *xData = (double*)jl_array_data(x);
+	ST_double z;
+	for( i = 0; i < rows; i++) {
+		// NOTE that Stata uses 1 based index and col row order!
+		if(SF_vdata(var_index, i + 1, &z)) {
+			SF_display("Error");
+			return(NULL);
+		}
+		xData[i] = z; // Setting column vector
+	}
+	return x;
+}
+
+// Get Stata global array by name
+jl_array_t *SJ_get_matrix(char* name) {
+	ST_int i, j;
+	ST_retcode rc ;
+	ST_int rows, cols;
+	rows = SF_row(name);
+	cols = SF_col(name);
+
+	if (rows == 0) {
+		char errbuf[80] ;
+	  	snprintf(errbuf, 80, "Could not get matrix: %s\n", name) ;
+	  	SF_display(errbuf);
 		return NULL;
 	}
 
@@ -238,31 +283,51 @@ jl_array_t *SJ_get_matrix(char* name, int var_index) {
 	for( i = 0; i < rows; i++) {
 		for( j = 0; j < cols; j++) {
 			// NOTE that Stata uses 1 based index!
-			if (var_index) {
-				if(SF_vdata( i + 1, j + 1, &z)) return(NULL) ;
-			} else {
 				if(SF_mat_el(name, i + 1, j + 1, &z)) return(NULL) ;
-			}
-			xData[j + cols*i] = z;
+				xData[j + cols*i] = z;
 		}
 	}
 	return x;
 }
 
 // Set either by name (matrices) or by index (variables)
-int SJ_set_matrix(char* name, jl_array_t *x, int var_index) {
+int SJ_set_variable(char* name, int var_index, jl_array_t *x) {
 	char errbuf[80] ;
-	ST_int rows, cols, min_cols;
-	if (var_index) {
-		rows = SF_in2() ;
-		 // Only set column var_index if it is a variable
-		cols = var_index;
-		min_cols = var_index - 1;
-	} else {
-		min_cols = 0;
-		rows = SF_row(name);
-		cols = SF_col(name);
+	ST_int i, j, rows;
+	rows = SF_in2() ;
+	ST_retcode rc ;
+	ST_double z;
+
+	if (rows == 0) {
+	  snprintf(errbuf, 80, "Could not get Stata variable for setting: %s\n", name) ;
+	  SF_display(errbuf);
+		return 99;
 	}
+	// Get number of dimensions
+	int ndims = jl_array_ndims(x);
+	size_t rowsj = jl_array_dim(x, 0);
+	size_t colsj = jl_array_dim(x, 1);
+	if (rowsj != rows || colsj != 1) {
+		snprintf(errbuf, 80, "ERROR: variable dimensions for do not match for: %s", name);
+		SF_display(errbuf);
+		return 99;
+	}
+	// Get array pointer
+    double *xData = (double*)jl_array_data(x);
+	for( i = 0; i < rows; i++) {
+		// NOTE that Stata uses 1 based index and col row order!
+		z = xData[i];
+		if((rc = SF_vstore(var_index, i + 1,  z))) return(rc) ;
+	}
+	return 0;
+}
+
+// Set either by name (matrices) or by index (variables)
+int SJ_set_matrix(char* name, jl_array_t *x) {
+	char errbuf[80] ;
+	ST_int rows, cols;
+	rows = SF_row(name);
+	cols = SF_col(name);
 
 	ST_int i, j;
 	ST_retcode rc ;
@@ -286,15 +351,10 @@ int SJ_set_matrix(char* name, jl_array_t *x, int var_index) {
 	// Get array pointer
     double *xData = (double*)jl_array_data(x);
 	for( i = 0; i < rows; i++) {
-		for( j = min_cols; j < cols; j++) {
-			z = xData[j + cols * i];
+		for( j = 0; j < cols; j++) {
 			// NOTE that Stata uses 1 based index!
-			if (var_index) {
-				if((rc = SF_vstore(var_index, j + 1, z))) return(rc) ;
-
-			} else {
-				if((rc = SF_mat_store(name, i + 1, j + 1, z))) return(rc) ;
-			}
+			z = xData[j + cols * i];
+			if((rc = SF_mat_store(name, i + 1, j + 1, z))) return(rc) ;
 		}
 	}
 	return 0;
