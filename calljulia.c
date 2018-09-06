@@ -4,15 +4,14 @@
 #include "statajulia.h"
 
 // Invoked by main funcname stata_call
-int SJ_process(char *funcname, char *varlist)
+int process(char *funcname, char *varlist)
 {
 		int rc = 0;
-		SJ_get_macros();
-		SJ_get_scalars();
-		SJ_get_matrices();
-		// SJ_get_dataset();
-		SJ_get_variables();
-		jexec("printToBuffer()");
+		get_macros();
+		get_scalars();
+		get_matrices();
+		get_variables();
+		// jexec("printToBuffer()");
 
 		jl_function_t *func = jl_get_function(jl_current_module, funcname);
 		if (jl_exception_occurred() || func == NULL) {
@@ -20,15 +19,15 @@ int SJ_process(char *funcname, char *varlist)
 			return 1010;
 		}
 		jl_call0(func);
-		SJ_set_matrices();
-		SJ_set_macros();
-		SJ_set_scalars();
-		SJ_set_variables();
+		set_matrices();
+		set_macros();
+		set_scalars();
+		set_variables();
 		displayPrintBuffer();
 		return rc;
 }
 
-int SJ_get_variables() {
+int get_variables() {
 	char* str = NULL;
 	// Variable not required to be defined
 	if( get_julia_string("get_variables", &str) )
@@ -40,7 +39,7 @@ int SJ_get_variables() {
 	snprintf(command, 80, "nameGetVar(%d)", i);
 	get_julia_string(command, &name);
     while( strlen(name) ) {
-		if( (x = SJ_get_variable(name, i) ) == NULL) {
+		if( (x = get_variable(name, i) ) == NULL) {
 			SF_error("Could not get Stata var\n");
 			return 234;
 		}
@@ -54,7 +53,7 @@ int SJ_get_variables() {
     return 0;
 }
 
-int SJ_set_variables() {
+int set_variables() {
 	char* str = NULL;
 	// Variable not required to be defined
 	if( get_julia_string("get_variables", &str) )
@@ -72,14 +71,14 @@ int SJ_set_variables() {
 			SF_error("Should not happen!\n");
 			return 10101;
 		}
-		// Update if it should 
+		// Update if it should
 		if(jl_unbox_int32(x)) {
 			snprintf(command, 80, "getVariable(\"%s\")", name);
 			if( (x = jl_eval_string(command)) == NULL ) {
 				SF_error("Could not get Julia var\n");
 				return 321;
 			}
-			if(SJ_set_variable(name, i, (jl_array_t *)x)) {
+			if(set_variable(name, i, (jl_array_t *)x)) {
 				SF_error("Could not set Stata var\n");
 				return 234;
 			}
@@ -91,36 +90,14 @@ int SJ_set_variables() {
     return 0;
 }
 
-int SJ_get_dataset() {
-	ST_int cols = SF_nvars();
-	if (cols == 0) {
-		return 1;
-	}
-	ST_int rows = SF_in2();
-	jl_array_t* x;
-	if( (x = create_2D(rows, cols)) == NULL ) return 1293;
-	double *xData = (double*)jl_array_data(x);
-	ST_double z;
-	ST_retcode rc ;
-	for(ST_int i = 0; i < rows; i++) {
-		for(ST_int j = 0; j < cols; j++) {
-			// NOTE that Stata uses 1 based index!
-			if((rc = SF_vdata( i + 1, j + 1, &z))) return(rc) ;
-			xData[j + cols*i] = z;
-		}
-	}
-	if( call_julia("addDataset", (jl_value_t *)x, NULL ) == NULL ) return 321;
-    return 0;
-}
-
-int SJ_get_matrices() {
+int get_matrices() {
 	char *str = NULL;
 	// Variable not required to be defined
 	if( get_julia_string("get_matrices", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
-		jl_array_t *x = SJ_get_matrix(name);
+		jl_array_t *x = get_matrix(name);
 		jl_function_t *func = jl_get_function(jl_current_module, "addMatrix");
 		if (jl_exception_occurred() || func == NULL) {
 	        SF_error("function addMatrix not found\n");
@@ -136,7 +113,7 @@ int SJ_get_matrices() {
     return 0;
 }
 
-int SJ_set_matrices() {
+int set_matrices() {
 	char *str = NULL;
 
 	// Variable not required to be defined
@@ -151,14 +128,14 @@ int SJ_set_matrices() {
 	  		SF_error("Could not get array from Julia\n");
 	  		return 1;
 	  	}
-		SJ_set_matrix(name, (jl_array_t *)x);
+		set_matrix(name, (jl_array_t *)x);
 		// Get next name
         name = strtok(NULL, " ");
     }
     return 0;
 }
 
-int SJ_get_macros() {
+int get_macros() {
 	char *str = NULL;
 	// Variable not required to be defined
 	if( get_julia_string("get_macros", &str) )
@@ -178,7 +155,7 @@ int SJ_get_macros() {
     return 0;
 }
 
-int SJ_set_macros() {
+int set_macros() {
 	char *str = NULL;
 	// Variable not required to be defined
 	if( get_julia_string("set_macros", &str) )
@@ -199,7 +176,7 @@ int SJ_set_macros() {
     return 0;
 }
 
-int SJ_get_scalars() {
+int get_scalars() {
 	char *str = NULL;
 	int rc = 0;
 	ST_double d;
@@ -217,7 +194,7 @@ int SJ_get_scalars() {
     return 0;
 }
 
-int SJ_set_scalars() {
+int set_scalars() {
 	char *str = NULL;
 	int rc = 0;
 	ST_double d = 0;
@@ -242,7 +219,7 @@ int SJ_set_scalars() {
 }
 
 // Get Stata global array by name
-jl_array_t *SJ_get_variable(char* name, int var_index) {
+jl_array_t *get_variable(char* name, int var_index) {
 	ST_int i, j, rows;
 	ST_retcode rc ;
 	rows = SF_in2() ;
@@ -270,7 +247,7 @@ jl_array_t *SJ_get_variable(char* name, int var_index) {
 }
 
 // Get Stata global array by name
-jl_array_t *SJ_get_matrix(char* name) {
+jl_array_t *get_matrix(char* name) {
 	ST_int i, j;
 	ST_retcode rc ;
 	ST_int rows, cols;
@@ -301,7 +278,7 @@ jl_array_t *SJ_get_matrix(char* name) {
 }
 
 // Set either by name (matrices) or by index (variables)
-int SJ_set_variable(char* name, int var_index, jl_array_t *x) {
+int set_variable(char* name, int var_index, jl_array_t *x) {
 	char errbuf[80] ;
 	ST_int i, j, rows;
 	rows = SF_in2() ;
@@ -333,7 +310,7 @@ int SJ_set_variable(char* name, int var_index, jl_array_t *x) {
 }
 
 // Set either by name (matrices) or by index (variables)
-int SJ_set_matrix(char* name, jl_array_t *x) {
+int set_matrix(char* name, jl_array_t *x) {
 	char errbuf[80] ;
 	ST_int rows, cols;
 	rows = SF_row(name);
@@ -371,7 +348,7 @@ int SJ_set_matrix(char* name, jl_array_t *x) {
 }
 
 // Execute single Julia command, returning the result in a Stata macro
-int SJ_execute_command(char *command) {
+int execute_command(char *command) {
 	char buf[80] ;
 	if (strlen(command) == 0) {
 		SF_error("Either using och command options have to be set");

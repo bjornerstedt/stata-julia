@@ -11,14 +11,18 @@ int displayPrintBuffer() {
         SF_error("Failed getting the print Buffer from Julia\n");
     // jl_string_ptr(ret);
     SF_display(jl_string_ptr(ret));
+    return 0;
 }
 
 // execute Julia command
 int jexec(char *command) {
     jl_value_t* ret;
     ret = jl_eval_string(command);
-    if (jl_exception_occurred())
+    if (jl_exception_occurred()) {
         SF_error("Failed getting the print Buffer from Julia\n");
+        return 22;
+    }
+    return 0;
 }
 
 // Get global string var from Julia
@@ -32,40 +36,6 @@ int get_julia_string(char *varname, char** str) {
 	}
 	*str = jl_string_ptr(ret);
 	return 0;
-}
-
-// Get token positions of tokens in list2 in list and return in tokenIndex
-int getIndices(char* list, char* list2, int tokenIndex[]) {
-    char* token[80];
-    int i = 0;
-    char *name = strtok(list, " ");
-    while( name != NULL ) {
-        char command[80];
-        token[i++] = name;
-        name = strtok(NULL, " ");
-    }
-    int token1count = i;
-
-    char* token2[80];
-    i = 0;
-    name = strtok(list2, " ");
-    while( name != NULL ) {
-        char command[80];
-        token2[i++] = name;
-        name = strtok(NULL, " ");
-    }
-    int token2count = i;
-
-    name = strtok(list, " ");
-    for (i = 0; i < token2count; i++) {
-        for (size_t j = 0; j < token1count; j++) {
-            if (!strcmp(token2[i], token[j]) ) {
-                tokenIndex[i] = j + 1; // Stata is 1 based
-            }
-        }
-    }
-    tokenIndex[i] = 0;
-    return 0;
 }
 
 // Create 2D array of float64 type

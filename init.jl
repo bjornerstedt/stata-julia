@@ -72,11 +72,10 @@ function isSetVar(str::String)
     return in(str, names)?1:0;
 end
 
+# Can be called to print output in Stata
 function printToBuffer()
     # result = var["v"]
-    result = "Hejsan"
     write(printBuffer,"Print Output:\n")
-    show(printBuffer, "text/plain", result)
     write(printBuffer,"\n")
 end
 

@@ -49,7 +49,7 @@ function getVarIndices(n::Integer)
 end
 
 getVarIndex(-1)
-
+isSetVar("v")
 
 addtodict("HÅ",1)
 addtodict("HEJ",1)

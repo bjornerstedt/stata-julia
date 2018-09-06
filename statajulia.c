@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	char* varlist = argv[3];
 
 	if (strlen(using) == 0) {
-		return SJ_execute_command(command);
+		return execute_command(command);
 	}
 	if (strlen(function) == 0) {
 		SF_error("Either function or command has to be specified.\n");
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Invoke command
-	retval = SJ_process( function, varlist);
+	retval = process( function, varlist);
 
 	jl_atexit_hook(0);
 	return(retval) ;
