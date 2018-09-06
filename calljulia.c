@@ -66,15 +66,25 @@ int SJ_set_variables() {
 	snprintf(command, 80, "nameGetVar(%d)", i);
 	get_julia_string(command, &name);
     while( strlen(name) && i < 4) {
-		snprintf(command, 80, "getVariable(\"%s\")", name);
+		// Check whether variable should be updated
+		snprintf(command, 80, "isSetVar(\"%s\")", name);
 		if( (x = jl_eval_string(command)) == NULL ) {
-			SF_error("Could not get Julia var\n");
-			return 321;
+			SF_error("Should not happen!\n");
+			return 10101;
 		}
-		if(SJ_set_variable(name, i, (jl_array_t *)x)) {
-			SF_error("Could not set Stata var\n");
-			return 234;
+		// Update if it should 
+		if(jl_unbox_int32(x)) {
+			snprintf(command, 80, "getVariable(\"%s\")", name);
+			if( (x = jl_eval_string(command)) == NULL ) {
+				SF_error("Could not get Julia var\n");
+				return 321;
+			}
+			if(SJ_set_variable(name, i, (jl_array_t *)x)) {
+				SF_error("Could not set Stata var\n");
+				return 234;
+			}
 		}
+		// Get next variable
 		snprintf(command, 80, "nameGetVar(%d)", ++i);
 		get_julia_string(command, &name);
     }

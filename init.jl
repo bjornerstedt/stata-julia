@@ -67,12 +67,9 @@ function nameGetVar(n::Integer)
     return String(names[n])
 end
 
-function nameSetVar(n::Integer)
-    names = split(strip(set_variables), r" +")
-    if length(names) < n || n < 1
-        return("")
-    end
-    return String(names[n])
+function isSetVar(str::String)
+    names = Set(split(strip(set_variables), r" +"))
+    return in(str, names)?1:0;
 end
 
 function printToBuffer()
