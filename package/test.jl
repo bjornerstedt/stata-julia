@@ -8,7 +8,29 @@ function testf!(x::Array)
      x[:] = transpose(x)
 end
 
-TestModule.f()
+module MyModule
+
+export x, y
+
+x() = "x"
+y() = "y"
+p() = "p"
+
+end
+
+module TestModule
+export f
+function f()
+    return 2
+end
+function g()
+    return 2
+end
+
+end
+
+using TestModule
+f()
 TestModule.f(6)
 x = [1.0 2 3; 4 5 6]
 
@@ -18,13 +40,7 @@ x
 A = [1 2 3; 4 5 6; 7 8 9]
 transpose(A)
 
-function f()
-     B = A
-end
 
-function g(x)
-     global B = x
-end
 
 
 get_variables = "n v nv"

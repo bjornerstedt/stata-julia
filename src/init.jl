@@ -1,10 +1,23 @@
 # init.jl
+module StataJulia
+
+export printBuffer, getPrintBuffer
+
+printBuffer = IOBuffer()
+
+# To print output in Stata
+function getPrintBuffer()
+    String(printBuffer)
+end
+
+end
+
+using StataJulia
 
 global_macro = Dict()
 scalar = Dict()
 matrix = Dict()
 var = Dict()
-printBuffer = IOBuffer()
 
 function addMatrix(x::String, y)
     matrix[x] = y
@@ -38,10 +51,6 @@ function getMacro(x::String)
 end
 
 
-function getPrintBuffer()
-    String(printBuffer)
-end
-
 function nameGetVar(n::Integer)
     names = split(strip(get_variables), r" +")
     if length(names) < n || n < 1
@@ -74,7 +83,7 @@ set_scalars = "scalar1 scalar2"
 # Can be called to print output in Stata
 function printToBuffer()
     # result = var["v"]
-    write(printBuffer,"Print Output:\n")
+    write(printBuffer,"This is my print Output:\n")
     write(printBuffer,"\n")
 end
 

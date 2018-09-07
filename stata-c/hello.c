@@ -5,6 +5,13 @@ STDLL stata_call(int argc, char *argv[])
 {
 	jl_init();
 
+	// Copy matrix
+	ST_double z, w;
+	ST_double k = 2.0;
+	ST_int retval = 0;
+	ST_int i, j;
+	ST_retcode rc ;
+
 	char macname[40];
 	char buf[80];
 	// SF_macro_save("macro", "macname");
@@ -17,12 +24,12 @@ STDLL stata_call(int argc, char *argv[])
 	snprintf(buf, 80, "Row & col: %d %d\n", SF_row("A"), SF_col("A"));
 	SF_display(buf);
 
-	// Copy matrix
-	ST_double z, w;
-	ST_double k = 2.0;
-	ST_int retval = 0;
-	ST_int i, j;
-	ST_retcode rc ;
+	// Get scalar
+	char* name = "r(mean)";
+	SF_scal_use(name, &z);
+	snprintf(buf, 80, "Scalar: %s %lf\n", name, z);
+	SF_display(buf);
+
 
 	// NOTE that Stata uses 1 based index!
 	ST_int rows = SF_row("A");

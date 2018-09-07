@@ -1,10 +1,23 @@
 # init.jl
+module StataJulia
+
+export printBuffer, getPrintBuffer
+
+printBuffer = IOBuffer()
+
+# To print output in Stata
+function getPrintBuffer()
+    String(printBuffer)
+end
+
+end
+
+using StataJulia
 
 global_macro = Dict()
 scalar = Dict()
 matrix = Dict()
 var = Dict()
-dataset = []
 
 function addMatrix(x::String, y)
     matrix[x] = y
@@ -12,10 +25,6 @@ end
 
 function getMatrix(x::String)
     matrix[x]
-end
-
-function addDataset(y)
-    dataset = y
 end
 
 function addVariable(x::String, y)
@@ -41,23 +50,6 @@ function getMacro(x::String)
     global_macro[x]
 end
 
-printBuffer = IOBuffer()
-
-function getPrintBuffer()
-    String(printBuffer)
-end
-
-
-################### USER DEFINED ######################
-
-get_macros = "global1 global2"
-set_macros = "global1 global2"
-get_matrices = "A B nvm"
-set_matrices = "A B nvm"
-get_variables = "n v nv"
-set_variables = "v nv"
-get_scalars = "scalar1"
-set_scalars = "scalar1 scalar2"
 
 function nameGetVar(n::Integer)
     names = split(strip(get_variables), r" +")
@@ -72,10 +64,26 @@ function isSetVar(str::String)
     return in(str, names)?1:0;
 end
 
+function addDataset(y)
+    dataset = y
+end
+
+################### USER DEFINED ######################
+
+get_macros = "global1 global2"
+set_macros = "global1 global2"
+get_matrices = "A B nvm"
+set_matrices = "A B nvm"
+get_variables = "n v nv"
+set_variables = "v nv"
+get_scalars = "scalar1"
+set_scalars = "scalar1 scalar2"
+
+
 # Can be called to print output in Stata
 function printToBuffer()
     # result = var["v"]
-    write(printBuffer,"Print Output:\n")
+    write(printBuffer,"This is my print Output:\n")
     write(printBuffer,"\n")
 end
 

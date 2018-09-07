@@ -56,8 +56,15 @@ jl_array_t* create_2D(int rows, int cols) {
 	return x;
 }
 
-jl_value_t *call_julia(char *funcname, jl_value_t* x, jl_value_t* y) {
-	jl_function_t *func = jl_get_function(jl_current_module, funcname);
+jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* y) {
+    jl_value_t *my_module;
+    jl_function_t *func;
+    if (module == NULL) {
+        func = jl_get_function(jl_current_module, funcname);
+    } else {
+        my_module = jl_eval_string(module);
+        func = jl_get_function(my_module, funcname);
+    }
 	if (jl_exception_occurred() || func == NULL) {
 		char errbuf[80] ;
 		snprintf(errbuf, 80, "Function not found: %s\n", funcname) ;

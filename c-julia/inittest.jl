@@ -1,18 +1,28 @@
 # test.jl
 
-function f(x::Array,y::Array)
-     y = 2.*x
- end
+module MyModule
+
+export x, y
+
+x() = "x"
+y() = "y"
+p() = "p"
+
+function f()
+    3.33
+end
+
+end
+
+
+using MyModule
+
 
  function testf(x::Array)
      y = 2.*x
      x = y
  end
 
-function f(x::String)
-    "X"
-    # ("X", "Y")
-end
 
 g(x,y) = x + 2y
 
