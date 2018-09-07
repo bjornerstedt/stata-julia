@@ -17,7 +17,7 @@ int get_variables();
 int set_variables();
 int getIndices(char* list, char* list2, int tokenIndex[]);
 int get_julia_string(char *command, char** str);
-jl_value_t *call_julia(char *funcname, jl_value_t* x, jl_value_t* y);
+jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* y);
 jl_array_t* create_2D(int rows, int cols);
 int get_scalars();
 int set_scalars();

@@ -12,7 +12,7 @@ int process(char *funcname, char *varlist)
 		if( (rc = get_matrices()) )  return rc ;
 		if( (rc = get_variables()) )  return rc ;
 		// jexec("printToBuffer()");
-		call_julia(funcname, NULL, NULL);
+		call_julia(NULL, funcname, NULL, NULL);
 
 		if( (rc = set_matrices()) )  return rc ;
 		if( (rc = set_macros()) )  return rc ;
@@ -38,7 +38,7 @@ int get_variables() {
 			SF_error("Could not get Stata var\n");
 			return 234;
 		}
-		if( call_julia("addVariable", jl_cstr_to_string(name) , x ) == NULL ) {
+		if( call_julia(NULL, "addVariable", jl_cstr_to_string(name) , x ) == NULL ) {
 			SF_error("Could not add Julia var\n");
 			return 322;
 		}
@@ -190,7 +190,7 @@ int get_scalars() {
     while( name != NULL ) {
 		if((rc = SF_scal_use(name, &d))) return(rc) ;   /* read scalar */
 		jl_value_t *x = jl_box_float64(d);
-		if( call_julia("addScalar", jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) return 321;
+		if( call_julia(NULL, "addScalar", jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) return 321;
 		// Get next name
         name = strtok(NULL, " ");
     }
