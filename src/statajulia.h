@@ -1,7 +1,7 @@
 
 int main(int argc, char *argv[]);
 STDLL stata_call(int argc, char *argv[]);
-int process(char *funcname, char *varlist);
+int process(char *funcname);
 int set_matrix(char* name, jl_array_t *x);
 int set_variable(char* name, int var_index, jl_array_t *x);
 jl_array_t *get_matrix(char* name);
@@ -23,3 +23,4 @@ int get_scalars();
 int set_scalars();
 int displayPrintBuffer();
 int jexec(char *command);
+int julia_set_varlist(char* name, char* varlist);

@@ -4,7 +4,7 @@
 #include "statajulia.h"
 
 // Invoked by main funcname stata_call
-int process(char *funcname, char *varlist)
+int process(char *funcname)
 {
 		int rc = 0;
 		if( (rc = get_macros()) )  return rc ;
@@ -50,6 +50,7 @@ int get_variables() {
 
 int set_variables() {
 	char* str = NULL;
+	int rc = 0;
 	// Variable not required to be defined
 	if( get_julia_string("stata_init[\"get_variables\"]", &str) )
 		return 0;
@@ -58,7 +59,7 @@ int set_variables() {
 	char *name = " ";
 	char command[80];
 	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
-	get_julia_string(command, &name);
+	if( (rc = get_julia_string(command, &name)) ) return rc;
     while( strlen(name) && i < 4) {
 		// Check whether variable should be updated
 		snprintf(command, 80, "StataJulia.isSetVar(\"%s\")", name);
@@ -75,21 +76,22 @@ int set_variables() {
 			}
 			if(set_variable(name, i, (jl_array_t *)x)) {
 				SF_error("Could not set Stata var\n");
-				return 234;
+				return 2347;
 			}
 		}
 		// Get next variable
 		snprintf(command, 80, "StataJulia.nameGetVar(%d)", ++i);
-		get_julia_string(command, &name);
+		if( (rc = get_julia_string(command, &name)) ) return rc;
     }
     return 0;
 }
 
 int get_matrices() {
-	char *str = NULL;
-	// Variable not required to be defined
-	if( get_julia_string("stata_init[\"get_matrices\"]", &str) )
-		return 0;
+	char *ret = NULL;
+	char str[200];
+	if( get_julia_string("stata_init[\"get_matrices\"]", &ret) )
+		return 0; // Variable not required to be defined
+	strcpy(str, ret);
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		jl_array_t *x;
@@ -106,20 +108,28 @@ int get_matrices() {
 }
 
 int set_matrices() {
-	char *str = NULL;
-	// Variable not required to be defined
-	if( get_julia_string("stata_init[\"set_matrices\"]", &str) )
-		return 0;
+	char *ret = NULL;
+	char str[200];
+	char buf[200];
+	if( get_julia_string("stata_init[\"set_matrices\"]", &ret) )
+		return 0; // Variable not required to be defined
+	strcpy(str, ret);
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		char command[80];
 		snprintf(command, 80, "StataJulia.getMatrix(\"%s\")", name);
 		jl_value_t *x = jl_eval_string(command);
 	  	if (jl_exception_occurred()) {
-	  		SF_error("Could not get array from Julia\n");
-	  		return 1;
+			snprintf(buf, 80, "Could not get array from Julia: %s\n", name);
+			SF_error(buf);
+	  		return 177;
 	  	}
-		set_matrix(name, (jl_array_t *)x);
+		int rc = 0;
+		if ((rc = set_matrix(name, (jl_array_t *)x) ) ){
+			snprintf(buf, 80, "Setting Stata matrix failed: %s\n", name);
+			SF_error(buf);
+			return rc;
+		}
 		// Get next name
         name = strtok(NULL, " ");
     }
@@ -129,6 +139,7 @@ int set_matrices() {
 int get_macros() {
 	char *ret = NULL;
 	char str[200];
+	char buf[200];
 	// Variable not required to be defined
 	if( get_julia_string("stata_init[\"get_macros\"]", &ret) )
 		return 0;
@@ -137,11 +148,19 @@ int get_macros() {
     while( name != NULL ) {
 		char content[80];
 		char command[80];
-		SF_macro_use(name, (char *)content, 80);
+		int rc = 0;
+		if ((rc = SF_macro_use(name, (char *)content, 80) ) ){
+			snprintf(buf, 80, "Getting macro from Julia failed: %s\n", name);
+			SF_error(buf);
+			return rc;
+		}
 		snprintf(command, 80, "StataJulia.addMacro(\"%s\", \"%s\")", name, content);
 		jl_eval_string(command);
-		if (jl_exception_occurred())
-	        SF_display("setting failed\n");
+		if (jl_exception_occurred()) {
+			snprintf(buf, 80, "Setting macro in Julia failed: %s\n", name);
+			SF_error(buf);
+			return 3296;
+		}
 		// Get next name
         name = strtok(NULL, " ");
     }
@@ -151,6 +170,7 @@ int get_macros() {
 int set_macros() {
 	char *ret = NULL;
 	char str[200];
+	char buf[200];
 	// Variable not required to be defined
 	if( get_julia_string("stata_init[\"set_macros\"]", &ret) )
 		return 0;
@@ -161,11 +181,18 @@ int set_macros() {
 		char command[80];
 		snprintf(command, 80, "StataJulia.getMacro(\"%s\")", name);
 		jl_value_t* ret = jl_eval_string(command);
-		if (jl_exception_occurred())
-			SF_display("getting from Julia failed\n");
+		if (jl_exception_occurred()) {
+			snprintf(buf, 80, "Getting macro from Julia failed: %s\n", name);
+			SF_error(buf);
+			return 3296;
+		}
 		content = jl_string_ptr(ret);
-		SF_macro_save(name, (char*)content);
-		// TODO: print error if not found in Stata
+		int rc = 0;
+		if ((rc = SF_macro_save(name, (char*)content)) ){
+			snprintf(buf, 80, "Getting macro from Julia failed: %s\n", name);
+			SF_error(buf);
+			return rc;
+		}
         name = strtok(NULL, " ");
     }
     return 0;
@@ -174,6 +201,7 @@ int set_macros() {
 int get_scalars() {
 	char *ret = NULL;
 	char str[200];
+	char buf[200];
 	int rc = 0;
 	ST_double d;
 	// Variable not required to be defined
@@ -184,7 +212,11 @@ int get_scalars() {
     while( name != NULL ) {
 		if((rc = SF_scal_use(name, &d))) return(rc) ;   /* read scalar */
 		jl_value_t *x = jl_box_float64(d);
-		if( call_julia("StataJulia", "addScalar", jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) return 321;
+		if( call_julia("StataJulia", "addScalar", jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) {
+			snprintf(buf, 80, "Could not add scalar: %s\n", name);
+			SF_error(buf);
+			return 3216;
+		}
 		// Get next name
         name = strtok(NULL, " ");
     }
@@ -194,6 +226,7 @@ int get_scalars() {
 int set_scalars() {
 	char *ret = NULL;
 	char str[200];
+	char buf[200];
 	int rc = 0;
 	ST_double d = 0;
 	// Variable not required to be defined
@@ -210,13 +243,17 @@ int set_scalars() {
 
 		d = jl_unbox_float64(x);
 		if((rc = SF_scal_save(name, d))) {
-			SF_error("Could not save scalar.\n");
+			snprintf(buf, 80, "Could not save scalar: %s", name);
+			SF_error(buf);
 			return rc;
 		}
         name = strtok(NULL, " "); // Get next name
     }
     return 0;
 }
+
+
+// ---------------- Get individual values --------------------
 
 // Get Stata global array by name
 jl_array_t *get_variable(char* name, int var_index) {
@@ -322,9 +359,9 @@ int set_matrix(char* name, jl_array_t *x) {
 	ST_double z;
 
 	if (rows == 0) {
-	  snprintf(errbuf, 80, "Could not get matrix: %s\n", name) ;
-	  SF_display(errbuf);
-		return 99;
+	    snprintf(errbuf, 80, "Could not get matrix: %s\n", name) ;
+	    SF_display(errbuf);
+		return 989;
 	}
 
 	// Get number of dimensions
@@ -333,7 +370,7 @@ int set_matrix(char* name, jl_array_t *x) {
 	size_t colsj = jl_array_dim(x, 1);
 	if (rowsj != rows || colsj != cols) {
 		snprintf(errbuf, 80, "ERROR: matrix dimensions for do not match for: %s", name);
-		return 99;
+		return 929;
 	}
 
 	// Get array pointer

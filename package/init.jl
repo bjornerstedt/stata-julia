@@ -17,7 +17,7 @@ stata_init["set_scalars"]  = "scalar1 scalar2"
 
 # Can be called to print output in Stata
 function printToBuffer()
-    # result = variables["v"]
+    # result = variable["v"]
     write(printBuffer,"This is my print Output:\n")
     write(printBuffer,"\n")
 end
@@ -28,6 +28,6 @@ function test_get_set()
     global_macro["global2"] =  "ss"
     scalar["scalar1"] = 2*scalar["scalar1"]
     scalar["scalar2"] = 2.1
-    variables["nv"] = 3.*variables["v"]
-    matrix["nvm"] = 2.*variables["v"]
+    variable["nv"] = 3.*variable["v"]
+    matrix["nvm"] = 2.*variable["v"]
 end

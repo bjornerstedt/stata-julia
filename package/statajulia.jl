@@ -2,14 +2,14 @@
 module StataJulia
 
 export printBuffer, getPrintBuffer, stata_init, isSetVar
-export global_macro, scalar, matrix, variables
+export global_macro, scalar, matrix, variable
 
 printBuffer = IOBuffer()
 global_macro = Dict()
 stata_init = Dict()
 scalar = Dict()
 matrix = Dict()
-variables = Dict()
+variable = Dict()
 
 function addDataset(y)
     # not implemented
@@ -18,11 +18,11 @@ end
 
 
 function addVariable(x::String, y)
-    variables[x] = y
+    variable[x] = y
 end
 
 function getVariable(x::String)
-    variables[x]
+    variable[x]
 end
 
 function addMatrix(x::String, y)
