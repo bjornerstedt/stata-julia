@@ -7,26 +7,25 @@
 int process(char *funcname, char *varlist)
 {
 		int rc = 0;
-		// TODO: Handle return values
-		get_macros();
-		get_scalars();
-		get_matrices();
-		get_variables();
-		jexec("printToBuffer()");
+		if( (rc = get_macros()) )  return rc ;
+		if( (rc = get_scalars()) )  return rc ;
+		if( (rc = get_matrices()) )  return rc ;
+		if( (rc = get_variables()) )  return rc ;
+		// jexec("printToBuffer()");
 		call_julia(funcname, NULL, NULL);
 
-		set_matrices();
-		set_macros();
-		set_scalars();
-		set_variables();
-		displayPrintBuffer();
+		if( (rc = set_matrices()) )  return rc ;
+		if( (rc = set_macros()) )  return rc ;
+		if( (rc = set_scalars()) )  return rc ;
+		if( (rc = set_variables()) )  return rc ;
+		rc = displayPrintBuffer();
 		return rc;
 }
 
 int get_variables() {
 	char* str = NULL;
 	// Variable not required to be defined
-	if( get_julia_string("get_variables", &str) )
+	if( get_julia_string("stata_init[\"get_variables\"]", &str) )
 		return 0;
 	jl_value_t *x = NULL;
 	int i = 1;
@@ -52,7 +51,7 @@ int get_variables() {
 int set_variables() {
 	char* str = NULL;
 	// Variable not required to be defined
-	if( get_julia_string("get_variables", &str) )
+	if( get_julia_string("stata_init[\"get_variables\"]", &str) )
 		return 0;
 	jl_value_t *x = NULL;
 	int i = 1;
@@ -62,7 +61,7 @@ int set_variables() {
 	get_julia_string(command, &name);
     while( strlen(name) && i < 4) {
 		// Check whether variable should be updated
-		snprintf(command, 80, "isSetVar(\"%s\")", name);
+		snprintf(command, 80, "StataJulia.isSetVar(\"%s\")", name);
 		if( (x = jl_eval_string(command)) == NULL ) {
 			SF_error("Should not happen!\n");
 			return 10101;
@@ -89,11 +88,13 @@ int set_variables() {
 int get_matrices() {
 	char *str = NULL;
 	// Variable not required to be defined
-	if( get_julia_string("get_matrices", &str) )
+	if( get_julia_string("stata_init[\"get_matrices\"]", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
-		jl_array_t *x = get_matrix(name);
+		jl_array_t *x;
+		if((x = get_matrix(name)) == NULL)
+			return 1011;
 		jl_function_t *func = jl_get_function(jl_current_module, "addMatrix");
 		if (jl_exception_occurred() || func == NULL) {
 	        SF_error("function addMatrix not found\n");
@@ -113,7 +114,7 @@ int set_matrices() {
 	char *str = NULL;
 
 	// Variable not required to be defined
-	if( get_julia_string("set_matrices", &str) )
+	if( get_julia_string("stata_init[\"set_matrices\"]", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
@@ -132,10 +133,12 @@ int set_matrices() {
 }
 
 int get_macros() {
-	char *str = NULL;
+	char *ret = NULL;
+	char str[200];
 	// Variable not required to be defined
-	if( get_julia_string("get_macros", &str) )
+	if( get_julia_string("stata_init[\"get_macros\"]", &ret) )
 		return 0;
+	strcpy(str, ret);
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		char content[80];
@@ -152,10 +155,12 @@ int get_macros() {
 }
 
 int set_macros() {
-	char *str = NULL;
+	char *ret = NULL;
+	char str[200];
 	// Variable not required to be defined
-	if( get_julia_string("set_macros", &str) )
+	if( get_julia_string("stata_init[\"set_macros\"]", &ret) )
 		return 0;
+	strcpy(str, ret);
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		const char* content;
@@ -173,12 +178,14 @@ int set_macros() {
 }
 
 int get_scalars() {
-	char *str = NULL;
+	char *ret = NULL;
+	char str[200];
 	int rc = 0;
 	ST_double d;
 	// Variable not required to be defined
-	if( get_julia_string("get_scalars", &str) )
+	if( get_julia_string("stata_init[\"get_scalars\"]", &ret) )
 		return 0;
+	strcpy(str, ret);
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		if((rc = SF_scal_use(name, &d))) return(rc) ;   /* read scalar */
@@ -191,12 +198,14 @@ int get_scalars() {
 }
 
 int set_scalars() {
-	char *str = NULL;
+	char *ret = NULL;
+	char str[200];
 	int rc = 0;
 	ST_double d = 0;
 	// Variable not required to be defined
-	if( get_julia_string("set_scalars", &str) )
+	if( get_julia_string("stata_init[\"set_scalars\"]", &ret) )
 		return 0;
+	strcpy(str, ret);
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		jl_value_t *x;
@@ -343,36 +352,4 @@ int set_matrix(char* name, jl_array_t *x) {
 		}
 	}
 	return 0;
-}
-
-// Execute single Julia command, returning the result in a Stata macro
-int execute_command(char *command) {
-	char buf[80] ;
-	if (strlen(command) == 0) {
-		SF_error("Either using och command options have to be set");
-		return 1;
-	}
-	jl_value_t *ret = jl_eval_string(command);
-	if (jl_exception_occurred()) {
-		SF_error("Could not understand Julia command");
-		return 1;
-	}
-	if (jl_typeis(ret, jl_float64_type)) {
-			double ret_unboxed = jl_unbox_float64(ret);
-			snprintf(buf, 80, "Result: %f\n", ret_unboxed) ;
-			SF_display(buf);
-			// TODO: Fix return values as global
-			// SF_scal_save("r(command)", ret_unboxed);
-			// SF_scal_save("command", ret_unboxed);
-			return 0;
-	} else {
-		int ret_unboxed = jl_unbox_int64(ret);
-		if (jl_exception_occurred()) {
-			SF_error("Only expressions returning a float or double are allowed.\n");
-			return 1;
-		}
-		snprintf(buf, 80, "Result: %d\n", ret_unboxed) ;
-		SF_display(buf);
-		return 0;
-	}
 }

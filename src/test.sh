@@ -10,4 +10,5 @@ fi
 
 cd ../package
 stata < test_getset.do
+# stata < test_simple.do
 cd ../src
