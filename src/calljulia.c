@@ -31,18 +31,18 @@ int get_variables() {
 	int i = 1;
 	char *name = " ";
 	char command[80];
-	snprintf(command, 80, "nameGetVar(%d)", i);
+	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
 	get_julia_string(command, &name);
     while( strlen(name) ) {
 		if( (x = (jl_value_t *)get_variable(name, i) ) == NULL) {
 			SF_error("Could not get Stata var\n");
 			return 234;
 		}
-		if( call_julia(NULL, "addVariable", jl_cstr_to_string(name) , x ) == NULL ) {
+		if( call_julia("StataJulia", "addVariable", jl_cstr_to_string(name) , x ) == NULL ) {
 			SF_error("Could not add Julia var\n");
 			return 322;
 		}
-		snprintf(command, 80, "nameGetVar(%d)", ++i);
+		snprintf(command, 80, "StataJulia.nameGetVar(%d)", ++i);
 		get_julia_string(command, &name);
     }
     return 0;
@@ -57,7 +57,7 @@ int set_variables() {
 	int i = 1;
 	char *name = " ";
 	char command[80];
-	snprintf(command, 80, "nameGetVar(%d)", i);
+	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
 	get_julia_string(command, &name);
     while( strlen(name) && i < 4) {
 		// Check whether variable should be updated
@@ -68,7 +68,7 @@ int set_variables() {
 		}
 		// Update if it should
 		if(jl_unbox_int32(x)) {
-			snprintf(command, 80, "getVariable(\"%s\")", name);
+			snprintf(command, 80, "StataJulia.getVariable(\"%s\")", name);
 			if( (x = jl_eval_string(command)) == NULL ) {
 				SF_error("Could not get Julia var\n");
 				return 321;
@@ -79,7 +79,7 @@ int set_variables() {
 			}
 		}
 		// Get next variable
-		snprintf(command, 80, "nameGetVar(%d)", ++i);
+		snprintf(command, 80, "StataJulia.nameGetVar(%d)", ++i);
 		get_julia_string(command, &name);
     }
     return 0;
@@ -95,15 +95,10 @@ int get_matrices() {
 		jl_array_t *x;
 		if((x = get_matrix(name)) == NULL)
 			return 1011;
-		jl_function_t *func = jl_get_function(jl_current_module, "addMatrix");
-		if (jl_exception_occurred() || func == NULL) {
-	        SF_error("function addMatrix not found\n");
-			return 1010;
+		if( call_julia("StataJulia", "addMatrix", jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) {
+			SF_error("Could not add array to Julia\n");
+			return 3214;
 		}
-	  	jl_value_t *jname = jl_cstr_to_string(name);
-	    jl_call2(func, jname, (jl_value_t *)x);
-		if (jl_exception_occurred())
-	        SF_display("setting of matrix in Julia failed\n");
 		// Get next name
         name = strtok(NULL, " ");
     }
@@ -112,14 +107,13 @@ int get_matrices() {
 
 int set_matrices() {
 	char *str = NULL;
-
 	// Variable not required to be defined
 	if( get_julia_string("stata_init[\"set_matrices\"]", &str) )
 		return 0;
     char *name = strtok(str, " ");
     while( name != NULL ) {
 		char command[80];
-		snprintf(command, 80, "getMatrix(\"%s\")", name);
+		snprintf(command, 80, "StataJulia.getMatrix(\"%s\")", name);
 		jl_value_t *x = jl_eval_string(command);
 	  	if (jl_exception_occurred()) {
 	  		SF_error("Could not get array from Julia\n");
@@ -144,7 +138,7 @@ int get_macros() {
 		char content[80];
 		char command[80];
 		SF_macro_use(name, (char *)content, 80);
-		snprintf(command, 80, "addMacro(\"%s\", \"%s\")", name, content);
+		snprintf(command, 80, "StataJulia.addMacro(\"%s\", \"%s\")", name, content);
 		jl_eval_string(command);
 		if (jl_exception_occurred())
 	        SF_display("setting failed\n");
@@ -165,7 +159,7 @@ int set_macros() {
     while( name != NULL ) {
 		const char* content;
 		char command[80];
-		snprintf(command, 80, "getMacro(\"%s\")", name);
+		snprintf(command, 80, "StataJulia.getMacro(\"%s\")", name);
 		jl_value_t* ret = jl_eval_string(command);
 		if (jl_exception_occurred())
 			SF_display("getting from Julia failed\n");
@@ -190,7 +184,7 @@ int get_scalars() {
     while( name != NULL ) {
 		if((rc = SF_scal_use(name, &d))) return(rc) ;   /* read scalar */
 		jl_value_t *x = jl_box_float64(d);
-		if( call_julia(NULL, "addScalar", jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) return 321;
+		if( call_julia("StataJulia", "addScalar", jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) return 321;
 		// Get next name
         name = strtok(NULL, " ");
     }
@@ -211,7 +205,7 @@ int set_scalars() {
 		jl_value_t *x;
 		// TODO: only floats work
 		char command[80];
-		snprintf(command, 80, "getScalar(\"%s\")", name);
+		snprintf(command, 80, "StataJulia.getScalar(\"%s\")", name);
 		if( (x = jl_eval_string(command)) == NULL ) return 321;
 
 		d = jl_unbox_float64(x);
