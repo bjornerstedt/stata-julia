@@ -17,8 +17,6 @@ int julia_set_varlist(char* name, char* varlist) {
 	}
 	char command[200];
 	snprintf(command, 80, "StataJulia.addJuliaInitString(\"%s\", \"%s\")", name, varlist);
-	// SF_display(command);
-	// SF_display("\n");
 	jl_eval_string(command);
 	if (jl_exception_occurred()) {
 		SF_error("Setting init list in Julia failed\n");
@@ -34,7 +32,7 @@ int main(int argc, char *argv[])
 	int retval = 0;
 	char buf[80] ;
 
-	if (argc != 11) {
+	if (argc != 12) {
 		SF_error("Internal error. The ADO file has sent the wrong number of pars");
 		return 1;
 	}
@@ -63,12 +61,17 @@ int main(int argc, char *argv[])
 	julia_set_varlist("get_macros", argv[i++]);
 	julia_set_varlist("set_macros", argv[i++]);
 
+	char* save = argv[11];
+	if (strlen(save) ) {
+		snprintf(buf, 80, "serialize(StataJulia.data, \"%s\")", save) ;
+		command = buf;
+	}
 	if (strlen(command) ) {
 		return execute_command(command);
 	}
 	if (strlen(function) == 0) {
 		SF_error("Either function or command has to be specified.\n");
-		return 1;
+		return 211;
 	}
 
 
@@ -84,14 +87,14 @@ int execute_command(char *command) {
 	char buf[80] ;
 	if (strlen(command) == 0) {
 		SF_error("Either using och command options have to be set");
-		return 1;
+		return 1456;
 	}
 
 	// Evaluate command:
 	jl_value_t *ret = jl_eval_string(command);
 	if (jl_exception_occurred()) {
 		SF_error("Could not understand Julia command");
-		return 1;
+		return 1534;
 	}
 	if (jl_typeis(ret, jl_float64_type)) {
 			double ret_unboxed = jl_unbox_float64(ret);
