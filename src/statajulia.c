@@ -12,8 +12,13 @@ STDLL stata_call(int argc, char *argv[])
 }
 
 int julia_set_varlist(char* name, char* varlist) {
+	if (!strlen(varlist)) {
+		return 1;
+	}
 	char command[200];
-	snprintf(command, 80, "stata_init[\"%s\"] = \"%s\"", name, varlist);
+	snprintf(command, 80, "StataJulia.addJuliaInitString(\"%s\", \"%s\")", name, varlist);
+	// SF_display(command);
+	// SF_display("\n");
 	jl_eval_string(command);
 	if (jl_exception_occurred()) {
 		SF_error("Setting init list in Julia failed\n");
@@ -21,10 +26,14 @@ int julia_set_varlist(char* name, char* varlist) {
 	}
 	return 0;
 }
+
 // C application entry point
 int main(int argc, char *argv[])
 	{
 	jl_init();
+	int retval = 0;
+	char buf[80] ;
+
 	if (argc != 11) {
 		SF_error("Internal error. The ADO file has sent the wrong number of pars");
 		return 1;
@@ -32,6 +41,18 @@ int main(int argc, char *argv[])
 	char* function = argv[0];
 	char* using = argv[1];
 	char* command = argv[2];
+
+	// Run file in 'using' if it has been specified
+	if (strlen(using)) {
+		snprintf(buf, 80, "include(\"%s\")", using) ;
+		jl_eval_string(buf);
+		if (jl_exception_occurred()) {
+			snprintf(buf, 80, "File init.jl not executed, error: %s.\n", jl_typeof_str(jl_exception_occurred())) ;
+			SF_error(buf);
+			return 101;
+		}
+	}
+
 	int i = 3;
 	julia_set_varlist("get_variables", argv[i++]);
 	julia_set_varlist("set_variables", argv[i++]);
@@ -42,7 +63,7 @@ int main(int argc, char *argv[])
 	julia_set_varlist("get_macros", argv[i++]);
 	julia_set_varlist("set_macros", argv[i++]);
 
-	if (strlen(using) == 0) {
+	if (strlen(command) ) {
 		return execute_command(command);
 	}
 	if (strlen(function) == 0) {
@@ -50,15 +71,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	int retval = 0;
-	char buf[80] ;
-	snprintf(buf, 80, "include(\"%s\")", using) ;
-	jl_eval_string(buf);
-	if (jl_exception_occurred()) {
-		snprintf(buf, 80, "File init.jl not executed, error: %s.\n", jl_typeof_str(jl_exception_occurred())) ;
-		SF_error(buf);
-		return 101;
-	}
 
 	// Invoke command
 	retval = process( function);

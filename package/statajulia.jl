@@ -11,6 +11,10 @@ scalar = Dict()
 matrix = Dict()
 variable = Dict()
 
+function addJuliaInitString(x, y)
+    stata_init[x] = y
+end
+
 function addDataset(y)
     # not implemented
     1

@@ -12,8 +12,11 @@ int process(char *funcname)
 		if( (rc = get_matrices()) )  return rc ;
 		if( (rc = get_variables()) )  return rc ;
 		// jexec("printToBuffer()");
-		call_julia(NULL, funcname, NULL, NULL);
-
+		if (call_julia(NULL, funcname, NULL, NULL) == NULL){
+			char buf[80] ;
+			snprintf(buf, 80, "Could not run Julia function: %s\n", funcname);
+			SF_error(buf);
+		}
 		if( (rc = set_matrices()) )  return rc ;
 		if( (rc = set_macros()) )  return rc ;
 		if( (rc = set_scalars()) )  return rc ;
