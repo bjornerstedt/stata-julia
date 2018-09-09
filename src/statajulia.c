@@ -41,25 +41,30 @@ int main(int argc, char *argv[])
 	char* command = argv[2];
 
 	// Run file in 'using' if it has been specified
-	if (strlen(using)) {
-		snprintf(buf, 80, "include(\"%s\")", using) ;
-		jl_eval_string(buf);
-		if (jl_exception_occurred()) {
-			snprintf(buf, 80, "File init.jl not executed, error: %s.\n", jl_typeof_str(jl_exception_occurred())) ;
-			SF_error(buf);
-			return 101;
+	static int first_time = 1;
+	if (first_time) {
+		if (strlen(using)) {
+			snprintf(buf, 80, "include(\"%s\")", using) ;
+			jl_eval_string(buf);
+			if (jl_exception_occurred()) {
+				snprintf(buf, 80, "File init.jl not executed, error: %s.\n", jl_typeof_str(jl_exception_occurred())) ;
+				SF_error(buf);
+				return 101;
+			}
 		}
-	}
 
-	int i = 3;
-	julia_set_varlist("get_variables", argv[i++]);
-	julia_set_varlist("set_variables", argv[i++]);
-	julia_set_varlist("get_matrices", argv[i++]);
-	julia_set_varlist("set_matrices", argv[i++]);
-	julia_set_varlist("get_scalars", argv[i++]);
-	julia_set_varlist("set_scalars", argv[i++]);
-	julia_set_varlist("get_macros", argv[i++]);
-	julia_set_varlist("set_macros", argv[i++]);
+		int i = 3;
+		julia_set_varlist("get_variables", argv[i++]);
+		julia_set_varlist("set_variables", argv[i++]);
+		julia_set_varlist("get_matrices", argv[i++]);
+		julia_set_varlist("set_matrices", argv[i++]);
+		julia_set_varlist("get_scalars", argv[i++]);
+		julia_set_varlist("set_scalars", argv[i++]);
+		julia_set_varlist("get_macros", argv[i++]);
+		julia_set_varlist("set_macros", argv[i++]);
+
+		first_time = 0;
+	}
 
 	char* save = argv[11];
 	if (strlen(save) ) {
