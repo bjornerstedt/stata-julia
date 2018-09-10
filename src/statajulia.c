@@ -32,9 +32,10 @@ int main(int argc, char *argv[])
 	int retval = 0;
 	char buf[80] ;
 
-	if (argc != 12) {
+	if (argc != 13) {
 		SF_error("Internal error. The ADO file has sent the wrong number of pars");
 		return 1;
+		int has_selection = 0;
 	}
 	char* function = argv[0];
 	char* using = argv[1];
@@ -68,8 +69,9 @@ int main(int argc, char *argv[])
 	} else {
 		printf("already run!!\n");
 	}
-
-	char* save = argv[11];
+	// Stata has if or in
+	int has_selection = strlen(argv[11]);
+	char* save = argv[12];
 	if (strlen(save) ) {
 		snprintf(buf, 80, "Saving data to file: %s\n", save) ;
 		SF_display(buf);
@@ -83,15 +85,15 @@ int main(int argc, char *argv[])
 		return 211;
 	}
 
-
 	// Invoke command
-	retval = process( function);
+	retval = process( function, has_selection);
 
 	jl_atexit_hook(0);
 	return(retval) ;
 }
 
 // Execute single Julia command, returning the result in a Stata macro
+// NOTE that it does not handla return values well, and does not use init values.
 int execute_command(char *command) {
 	char buf[80] ;
 	if (strlen(command) == 0) {

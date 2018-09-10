@@ -13,7 +13,7 @@ stata_init["set_matrices"] = "A B nvm"
 stata_init["get_macros"] = "global1 global2"
 stata_init["set_macros"]  = "global1 global2"
 stata_init["get_scalars"]  = "scalar1"
-stata_init["set_scalars"]  = "scalar1 scalar2"
+stata_init["set_scalars"]  = " scalar2"
 
 # Can be called to print output in Stata
 function printToBuffer()
@@ -33,12 +33,8 @@ function test_get_set()
     stata.matrix["B"] = transpose(stata.matrix["A"])
     stata.global_macro["global1"] = "Test"
     stata.global_macro["global2"] =  "Second string"
-    stata.scalar["scalar1"] = 2*stata.scalar["scalar1"]
-    # stata.scalar["scalar2"] = 2.1
+    stata.scalar["scalar2"] = 2*stata.scalar["scalar1"]
     stata.variable["nv"] = 3.*stata.variable["v"]
-    stata.matrix["nvm"] = 2.*stata.variable["v"]
-end
-
-function saveData()
-    StataJulia.serializeData("test.bin")
+    stata.matrix["nvm"] = 2.*stata.variable["v"].*stata.variable["touse"]
+    print(stata.variable["touse"])
 end

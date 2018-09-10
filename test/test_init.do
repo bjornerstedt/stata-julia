@@ -11,4 +11,5 @@ mkmat nv , matrix( nvm)
 matrix A = (1,2\3,4)
 matrix B = A
 scalar scalar1 = 123.4
+scalar scalar2 = 0
 global global1 "Hejsan"

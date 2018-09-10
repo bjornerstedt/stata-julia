@@ -4,13 +4,13 @@
 #include "statajulia.h"
 
 // Invoked by main funcname stata_call
-int process(char *funcname)
+int process(char *funcname, int has_selection)
 {
 		int rc = 0;
-		if( (rc = get_macros()) )  return rc ;
-		if( (rc = get_scalars()) )  return rc ;
-		if( (rc = get_matrices()) )  return rc ;
-		if( (rc = get_variables()) )  return rc ;
+		if( (rc = macros()) )  return rc ;
+		if( (rc = scalars()) )  return rc ;
+		if( (rc = matrices()) )  return rc ;
+		if( (rc = variables(has_selection)) )  return rc ;
 		// jexec("printToBuffer()");
 		if (call_julia(NULL, funcname, NULL, NULL) == NULL){
 			char buf[80] ;
@@ -20,12 +20,12 @@ int process(char *funcname)
 		if( (rc = set_matrices()) )  return rc ;
 		if( (rc = set_macros()) )  return rc ;
 		if( (rc = set_scalars()) )  return rc ;
-		if( (rc = set_variables()) )  return rc ;
+		if( (rc = set_variables( has_selection)) )  return rc ;
 		rc = displayPrintBuffer();
 		return rc;
 }
 
-int get_variables() {
+int variables(int has_selection) {
 	char* str = NULL;
 	// Variable not required to be defined
 	if( get_julia_string("stata_init[\"get_variables\"]", &str) )
@@ -33,6 +33,8 @@ int get_variables() {
 	jl_value_t *x = NULL;
 	int i = 1;
 	char *name = " ";
+	create_selection();
+
 	char command[80];
 	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
 	get_julia_string(command, &name);
@@ -51,7 +53,29 @@ int get_variables() {
     return 0;
 }
 
-int set_variables() {
+int create_selection() {
+	// Create variable touse
+	ST_int i;
+	ST_retcode rc ;
+	jl_array_t *x;
+	if( (x = create_2D(SF_in2(), 1)) == NULL ) return 6544;
+	// TODO: Should it be a 1d array?
+    double *xData = (double*)jl_array_data(x);
+	for( i = 0; i < SF_in1() - 1; i++) {
+		xData[i] = 0.0;
+	}
+	for( i = SF_in1() - 1; i < SF_in2(); i++) {
+		xData[i] = (SF_ifobs(i + 1))?1.0:0.0;
+	}
+
+	if( call_julia("StataJulia", "addVariable", jl_cstr_to_string("touse") , x ) == NULL ) {
+		SF_error("Could not add Julia var touse\n");
+		return 322;
+	}
+	return 0;
+}
+
+int set_variables(int has_selection) {
 	char* str = NULL;
 	int rc = 0;
 	// Variable not required to be defined
@@ -89,7 +113,7 @@ int set_variables() {
     return 0;
 }
 
-int get_matrices() {
+int matrices() {
 	char *ret = NULL;
 	char str[200];
 	if( get_julia_string("stata_init[\"get_matrices\"]", &ret) )
@@ -139,7 +163,7 @@ int set_matrices() {
     return 0;
 }
 
-int get_macros() {
+int macros() {
 	char *ret = NULL;
 	char str[200];
 	char buf[200];
@@ -201,7 +225,7 @@ int set_macros() {
     return 0;
 }
 
-int get_scalars() {
+int scalars() {
 	char *ret = NULL;
 	char str[200];
 	char buf[200];

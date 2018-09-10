@@ -31,8 +31,10 @@ int jexec(char *command) {
 int get_julia_string(char *varname, char** str) {
 	jl_value_t *ret = jl_eval_string(varname);
 	if (jl_exception_occurred()) {
-		char command[80];
         // Return silently, as not finding string is possible
+        // char command[80];
+        // snprintf(command, 80, "Could not get Julia String: %s\n", varname);
+        // SF_display(command);
 		return 1;
 	}
     // TODO: Use const char* declarations

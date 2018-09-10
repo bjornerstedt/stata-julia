@@ -1,6 +1,6 @@
 run ../test/test_init.do
 
-julia , using(init.jl)  function(test_get_set)
+julia n v nv if n > 2, using(init.jl)  function(test_get_set)
 matlist A
 matlist B
 di "$global1"
