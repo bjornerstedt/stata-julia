@@ -17,11 +17,11 @@ int julia_set_varlist(char* name, char* varlist) {
 	}
 	char command[200];
 	snprintf(command, 80, "StataJulia.addJuliaInitString(\"%s\", \"%s\")", name, varlist);
-	jl_eval_string(command);
-	if (jl_exception_occurred()) {
-		SF_error("Setting init list in Julia failed\n");
-		return 3293;
-	}
+	int ret = jl_eval_string(command);
+	// if (jl_exception_occurred()) {
+	// 	SF_error("Setting init list in Julia failed\n");
+	// 	return 3293;
+	// }
 	return 0;
 }
 
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 			snprintf(buf, 80, "include(\"%s\")", using) ;
 			jl_eval_string(buf);
 			if (jl_exception_occurred()) {
-				snprintf(buf, 80, "File init.jl not executed, error: %s.\n", jl_typeof_str(jl_exception_occurred())) ;
+				snprintf(buf, 80, "File %s not executed, error: %s.\n", using, jl_typeof_str(jl_exception_occurred())) ;
 				SF_error(buf);
 				return 101;
 			}
@@ -62,14 +62,18 @@ int main(int argc, char *argv[])
 		julia_set_varlist("set_scalars", argv[i++]);
 		julia_set_varlist("get_macros", argv[i++]);
 		julia_set_varlist("set_macros", argv[i++]);
+		julia_set_varlist("savefile", argv[i++]);
 
 		first_time = 0;
+	} else {
+		printf("already run!!\n");
 	}
 
 	char* save = argv[11];
 	if (strlen(save) ) {
-		snprintf(buf, 80, "serialize(StataJulia.data, \"%s\")", save) ;
-		command = buf;
+		snprintf(buf, 80, "Saving data to file: %s\n", save) ;
+		SF_display(buf);
+		function = "serializeData";
 	}
 	if (strlen(command) ) {
 		return execute_command(command);
@@ -98,7 +102,7 @@ int execute_command(char *command) {
 	// Evaluate command:
 	jl_value_t *ret = jl_eval_string(command);
 	if (jl_exception_occurred()) {
-		SF_error("Could not understand Julia command");
+		SF_error("Could not understand Julia command\n");
 		return 1534;
 	}
 	if (jl_typeis(ret, jl_float64_type)) {

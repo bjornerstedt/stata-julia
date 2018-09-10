@@ -3,8 +3,8 @@ module StataJulia
 
 # using DataFrames
 
-export serializeData, deserializeData
 export printBuffer, getPrintBuffer, stata_init, isSetVar
+export global_macro, scalar, matrix, variable
 # export dataset
 export stata
 
@@ -17,9 +17,16 @@ end
 
 stata = StataData(Dict(), Dict(), Dict(), Dict() )
 
+
 # To print in Stata Console
 printBuffer = IOBuffer()
 stata_init = Dict()
+
+# global_macro = Dict()
+# scalar = Dict()
+# matrix = Dict()
+# variable = Dict()
+# dataset = DataFrame()
 
 # function addToDataset(x::String, y::Array)
 #     dataset[Symbol.(x)] = y
@@ -31,19 +38,6 @@ stata_init = Dict()
 
 function addVariable(x::String, y)
     stata.variable[x] = y
-end
-
-function serializeData()
-    io = open(stata_init["savefile"], "w")
-    serialize(io, stata)
-    close(io)
-end
-
-# TODO: Use function to test serialization
-function deserializeData(fn::String)
-    io = open(fn, "w")
-    stata = deserialize(io)
-    close(io)
 end
 
 function getVariable(x::String)

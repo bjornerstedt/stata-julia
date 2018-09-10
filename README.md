@@ -21,12 +21,13 @@ To test the program, run `package/test.do` in Stata.
 The Stata syntax is
 
 ```
-julia [varlist] , [function(string)] [using(string)] [command(string)]
+julia [varlist] , [function(string)] [using(string)] [command(string)] [save(string)]
 ```
 
 * `using` - is the Julia script that contains init parameters and the method to invoke.
 * `function` - is the method to invoke, defined in the using file
 * `command` - can be used to simply invoke a command without creating a script.
+* `save` - specifies a filename to serialize the data in Julia in.
 
 ## The Julia code
 

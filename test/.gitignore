@@ -1,3 +1,5 @@
 *.plugin
+tmp*.*
 julia.ado
 statajulia.jl
+*.bin

@@ -32,8 +32,7 @@ int get_julia_string(char *varname, char** str) {
 	jl_value_t *ret = jl_eval_string(varname);
 	if (jl_exception_occurred()) {
 		char command[80];
-		snprintf(command, 80, "Could not get Julia String: %s\n", varname);
-		SF_display(command);
+        // Return silently, as not finding string is possible
 		return 1;
 	}
     // TODO: Use const char* declarations
@@ -59,6 +58,7 @@ jl_array_t* create_2D(int rows, int cols) {
 jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* y) {
     jl_value_t *my_module;
     jl_function_t *func;
+    char errbuf[80] ;
     if (module == NULL) {
         func = jl_get_function(jl_current_module, funcname);
     } else {
@@ -66,9 +66,8 @@ jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* 
         func = jl_get_function(my_module, funcname);
     }
 	if (jl_exception_occurred() || func == NULL) {
-		char errbuf[80] ;
 		snprintf(errbuf, 80, "Function not found: %s\n", funcname) ;
-		SF_display(errbuf);
+		SF_error(errbuf);
 		return NULL;
 	}
 	jl_value_t *rv;
@@ -80,7 +79,8 @@ jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* 
 		rv = jl_call2(func, x, y);
 	}
 	if (jl_exception_occurred() || rv == NULL) {
-        SF_display("call_julia: Calling Julia function failed\n");
+        snprintf(errbuf, 80, "call_julia: Error: %s\n", jl_typeof_str(jl_exception_occurred())) ;
+		SF_error(errbuf);
 		return NULL;
 	}
 	return rv;

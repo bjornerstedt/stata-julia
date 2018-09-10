@@ -11,4 +11,4 @@ list
 
 matlist nvm
 
-julia , using(init.jl)  function(test_get_set)
+*julia , using(init.jl)  function(test_get_set)

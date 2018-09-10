@@ -67,15 +67,15 @@ int set_variables() {
 		// Check whether variable should be updated
 		snprintf(command, 80, "StataJulia.isSetVar(\"%s\")", name);
 		if( (x = jl_eval_string(command)) == NULL ) {
-			SF_error("Should not happen!\n");
-			return 10101;
+			SF_display("No variables to set in dataset\n");
+			return 0;
 		}
 		// Update if it should
 		if(jl_unbox_int32(x)) {
 			snprintf(command, 80, "StataJulia.getVariable(\"%s\")", name);
 			if( (x = jl_eval_string(command)) == NULL ) {
 				SF_error("Could not get Julia var\n");
-				return 321;
+				return 3241;
 			}
 			if(set_variable(name, i, (jl_array_t *)x)) {
 				SF_error("Could not set Stata var\n");
@@ -242,7 +242,11 @@ int set_scalars() {
 		// TODO: only floats work
 		char command[80];
 		snprintf(command, 80, "StataJulia.getScalar(\"%s\")", name);
-		if( (x = jl_eval_string(command)) == NULL ) return 321;
+		if( (x = jl_eval_string(command)) == NULL ) {
+			snprintf(buf, 80, "Could not get scalar: %s\n", name);
+			SF_error(buf);
+			return 5216;
+		}
 
 		d = jl_unbox_float64(x);
 		if((rc = SF_scal_save(name, d))) {

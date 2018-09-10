@@ -1,6 +1,6 @@
 # init.jl
 include("statajulia.jl")
-
+using DataFrames
 using StataJulia
 
 # List variables, matrices, macros and scalars to use
@@ -23,11 +23,22 @@ function printToBuffer()
 end
 
 function test_get_set()
-    matrix["B"] = transpose(matrix["A"])
-    global_macro["global1"] = "Test"
-    global_macro["global2"] =  "ss"
-    scalar["scalar1"] = 2*scalar["scalar1"]
-    scalar["scalar2"] = 2.1
-    variable["nv"] = 3.*variable["v"]
-    matrix["nvm"] = 2.*variable["v"]
+    # df = DataFrame()
+    # a = variable["v"]
+    # print( a)
+    # dataset[Symbol("v")] = [1; 2]
+    # print(dataset)
+    # # TODO: This does not work
+    # df[Symbol("v")] = matrix["nvm"]
+    stata.matrix["B"] = transpose(stata.matrix["A"])
+    stata.global_macro["global1"] = "Test"
+    stata.global_macro["global2"] =  "Second string"
+    stata.scalar["scalar1"] = 2*stata.scalar["scalar1"]
+    # stata.scalar["scalar2"] = 2.1
+    stata.variable["nv"] = 3.*stata.variable["v"]
+    stata.matrix["nvm"] = 2.*stata.variable["v"]
+end
+
+function saveData()
+    StataJulia.serializeData("test.bin")
 end
