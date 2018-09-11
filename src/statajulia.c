@@ -11,20 +11,6 @@ STDLL stata_call(int argc, char *argv[])
 	return main(argc, argv);
 }
 
-int julia_set_varlist(char* name, char* varlist) {
-	if (!strlen(varlist)) {
-		return 1;
-	}
-	char command[200];
-	snprintf(command, 80, "StataJulia.addJuliaInitString(\"%s\", \"%s\")", name, varlist);
-	int ret = jl_eval_string(command);
-	// if (jl_exception_occurred()) {
-	// 	SF_error("Setting init list in Julia failed\n");
-	// 	return 3293;
-	// }
-	return 0;
-}
-
 // C application entry point
 int main(int argc, char *argv[])
 	{
@@ -32,18 +18,19 @@ int main(int argc, char *argv[])
 	int retval = 0;
 	char buf[80] ;
 
-	if (argc != 13) {
+	if (argc < 2) {
+		// if (argc != 12) {
 		SF_error("Internal error. The ADO file has sent the wrong number of pars");
 		return 1;
-		int has_selection = 0;
 	}
 	char* function = argv[0];
 	char* using = argv[1];
-	char* command = argv[2];
+	char* command = (2 < argc)?argv[2]:NULL;
 
 	// Run file in 'using' if it has been specified
-	static int first_time = 1;
-	if (first_time) {
+	static int invoked = 0;
+	char* save = NULL;
+	if (!invoked) {
 		if (strlen(using)) {
 			snprintf(buf, 80, "include(\"%s\")", using) ;
 			jl_eval_string(buf);
@@ -55,39 +42,43 @@ int main(int argc, char *argv[])
 		}
 
 		int i = 3;
-		julia_set_varlist("get_variables", argv[i++]);
-		julia_set_varlist("set_variables", argv[i++]);
-		julia_set_varlist("get_matrices", argv[i++]);
-		julia_set_varlist("set_matrices", argv[i++]);
-		julia_set_varlist("get_scalars", argv[i++]);
-		julia_set_varlist("set_scalars", argv[i++]);
-		julia_set_varlist("get_macros", argv[i++]);
-		julia_set_varlist("set_macros", argv[i++]);
-		julia_set_varlist("savefile", argv[i++]);
-
-		first_time = 0;
+		if (i < argc) {
+			save = argv[i];
+			julia_set_varlist("savefile", argv[i++]);
+		}
+		julia_set_varlist("get_variables", (i < argc)?argv[i++]:"");
+		julia_set_varlist("set_variables", (i < argc)?argv[i++]:"");
+		julia_set_varlist("get_matrices", (i < argc)?argv[i++]:"");
+		julia_set_varlist("set_matrices", (i < argc)?argv[i++]:"");
+		julia_set_varlist("get_scalars", (i < argc)?argv[i++]:"");
+		julia_set_varlist("set_scalars", (i < argc)?argv[i++]:"");
+		julia_set_varlist("get_macros", (i < argc)?argv[i++]:"");
+		julia_set_varlist("set_macros", (i < argc)?argv[i++]:"");
 	} else {
-		printf("already run!!\n");
+		SF_display("Repeated invocation!\n");
 	}
+
 	// Stata has if or in
-	int has_selection = strlen(argv[11]);
-	char* save = argv[12];
-	if (strlen(save) ) {
-		snprintf(buf, 80, "Saving data to file: %s\n", save) ;
-		SF_display(buf);
-		function = "serializeData";
+	// TODO: remove has_selection, as touse is always created
+	// int has_selection = strlen(argv[12]);
+	if (save != NULL ) {
+		if ( strlen(save) ) {
+			snprintf(buf, 80, "Saving data to file: %s\n", save) ;
+			SF_display(buf);
+			function = "serializeData";
+		}
 	}
-	if (strlen(command) ) {
+	if (command != NULL && strlen(command)) {
 		return execute_command(command);
 	}
-	if (strlen(function) == 0) {
+	if (function != NULL && strlen(function) == 0) {
 		SF_error("Either function or command has to be specified.\n");
 		return 211;
 	}
-
 	// Invoke command
-	retval = process( function, has_selection);
+	retval = process( function, invoked++);
 
+	// jexec("StataJulia.destructor()");
 	jl_atexit_hook(0);
 	return(retval) ;
 }
@@ -95,7 +86,7 @@ int main(int argc, char *argv[])
 // Execute single Julia command, returning the result in a Stata macro
 // NOTE that it does not handla return values well, and does not use init values.
 int execute_command(char *command) {
-	char buf[80] ;
+	char buf[80];
 	if (strlen(command) == 0) {
 		SF_error("Either using och command options have to be set");
 		return 1456;
@@ -125,4 +116,19 @@ int execute_command(char *command) {
 		SF_display(buf);
 		return 0;
 	}
+}
+
+int julia_set_varlist(char* name, char* varlist) {
+	if (varlist == NULL || !strlen(varlist)) {
+		return 1;
+	}
+	char command[200];
+	snprintf(command, 80, "StataJulia.addJuliaInitString(\"%s\", \"%s\")", name, varlist);
+	printf("%s\n", command );
+	int ret = jl_eval_string(command);
+	if (jl_exception_occurred()) {
+		SF_error("Setting init list in Julia failed\n");
+		return 3293;
+	}
+	return 0;
 }

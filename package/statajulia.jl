@@ -29,6 +29,21 @@ stata_init = Dict()
 #     dataset[Symbol.(x)]
 # end
 
+stata_init["get_variables"]  = ""
+stata_init["set_variables"] = ""
+stata_init["get_matrices"] = ""
+stata_init["set_matrices"] = ""
+stata_init["get_macros"] = ""
+stata_init["set_macros"]  = ""
+stata_init["get_scalars"]  = ""
+stata_init["set_scalars"]  = ""
+
+function destructor()
+    stata_init  = nothing
+    stata = nothing
+    printBuffer = nothing
+end
+
 function addVariable(x::String, y)
     stata.variable[x] = y
 end
@@ -75,8 +90,11 @@ function getMacro(x::String)
 end
 
 function isSetVar(str::String)
+    if !haskey(stata_init, "set_variables")
+        return 0
+    end
     names = Set(split(strip(stata_init["set_variables"]), r" +"))
-    return in(str, names)?1:0;
+    return (in(str, names))?1:0;
 end
 
 # To print output in Stata
@@ -85,6 +103,9 @@ function getPrintBuffer()
 end
 
 function nameGetVar(n::Integer)
+    if !haskey(stata_init, "get_variables")
+        return("")
+    end
     names = split(strip(stata_init["get_variables"]), r" +")
     if length(names) < n || n < 1
         return("")

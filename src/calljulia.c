@@ -4,23 +4,26 @@
 #include "statajulia.h"
 
 // Invoked by main funcname stata_call
-int process(char *funcname, int has_selection)
-{
+int process(char *funcname, int invoked) {
 		int rc = 0;
-		if( (rc = macros()) )  return rc ;
-		if( (rc = scalars()) )  return rc ;
-		if( (rc = matrices()) )  return rc ;
-		if( (rc = variables(has_selection)) )  return rc ;
+		// invoked = 0;
+		if (!invoked) {
+			if( (rc = macros()) )  return rc ;
+			if( (rc = scalars()) )  return rc ;
+			if( (rc = matrices()) )  return rc ;
+			if( (rc = variables(0)) )  return rc ;
+		}
 		// jexec("printToBuffer()");
-		if (call_julia(NULL, funcname, NULL, NULL) == NULL){
+		call_julia(NULL, funcname, NULL, NULL);
+		if(jl_exception_occurred()) {
 			char buf[80] ;
-			snprintf(buf, 80, "Could not run Julia function: %s\n", funcname);
+			snprintf(buf, 80, "process(): Could not run Julia function: %s, %s\n", funcname,jl_typeof_str(jl_exception_occurred()));
 			SF_error(buf);
 		}
 		if( (rc = set_matrices()) )  return rc ;
 		if( (rc = set_macros()) )  return rc ;
 		if( (rc = set_scalars()) )  return rc ;
-		if( (rc = set_variables( has_selection)) )  return rc ;
+		if( (rc = set_variables( 0)) )  return rc ;
 		rc = displayPrintBuffer();
 		return rc;
 }
@@ -79,19 +82,21 @@ int set_variables(int has_selection) {
 	char* str = NULL;
 	int rc = 0;
 	// Variable not required to be defined
-	if( get_julia_string("stata_init[\"get_variables\"]", &str) )
-		return 0;
+
 	jl_value_t *x = NULL;
 	int i = 1;
 	char *name = " ";
 	char command[80];
 	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
 	if( (rc = get_julia_string(command, &name)) ) return rc;
-    while( strlen(name) && i < 4) {
-		// Check whether variable should be updated
+    while( strlen(name) ) {
+	// Check whether variable should be updated
 		snprintf(command, 80, "StataJulia.isSetVar(\"%s\")", name);
-		if( (x = jl_eval_string(command)) == NULL ) {
-			SF_display("No variables to set in dataset\n");
+		x = jl_eval_string(command);
+		if( jl_exception_occurred() || x == NULL ) {
+			char buf[80];
+	        snprintf(buf, 80, "ERROR: %s\n", jl_typeof_str(jl_exception_occurred()));
+	        SF_display(buf);
 			return 0;
 		}
 		// Update if it should

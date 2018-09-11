@@ -1,6 +1,8 @@
 
 clear all
 capture program drop julia
+capture program drop calljulia
+
 * Example dataset:
 set obs 5
 gen n = _n

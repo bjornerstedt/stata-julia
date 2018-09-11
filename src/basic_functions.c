@@ -20,7 +20,7 @@ int jexec(char *command) {
     ret = jl_eval_string(command);
     if (jl_exception_occurred()) {
         char buf[80];
-    	snprintf(buf, 80, "Failed Executing Julia command: %s\n", buf);
+    	snprintf(buf, 80, "Failed Executing Julia command: %s\n", command);
         SF_error(buf);
         return 22;
     }
@@ -30,11 +30,11 @@ int jexec(char *command) {
 // Get global string var from Julia
 int get_julia_string(char *varname, char** str) {
 	jl_value_t *ret = jl_eval_string(varname);
-	if (jl_exception_occurred()) {
+	if (ret == NULL || jl_exception_occurred()) {
         // Return silently, as not finding string is possible
-        // char command[80];
-        // snprintf(command, 80, "Could not get Julia String: %s\n", varname);
-        // SF_display(command);
+        char command[80];
+        snprintf(command, 80, "Could not get Julia String: %s %s\n", varname, jl_typeof_str(jl_exception_occurred()));
+        SF_display(command);
 		return 1;
 	}
     // TODO: Use const char* declarations

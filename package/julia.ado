@@ -5,9 +5,12 @@ syntax [varlist] [if] [in], [function(string)] [using(string)] [command(string)]
 [matrices(namelist)] [setmatrices(namelist)] [scalars(namelist)] [setscalars(namelist)] ///
 [macros(namelist)] [setmacros(namelist)] [save(string)]
 
-plugin call calljulia `varlist' `if' `in' , "`function'"  "`using'"  "`command'" ///
+
+plugin call calljulia `varlist' `if' `in' , "`function'"  "`using'"  "`command'"  "`save'" ///
  "`varlist'" "`setvariables'" "`matrices'" "`setmatrices'" "`scalars'" "`setscalars'" ///
- "`macros'" "`setmacros'" "`if'`in'" "`save'"
+ "`macros'" "`setmacros'"
+
+ *program drop calljulia
 
 end
 
