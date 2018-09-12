@@ -38,6 +38,10 @@ stata_init["set_macros"]  = ""
 stata_init["get_scalars"]  = ""
 stata_init["set_scalars"]  = ""
 
+function getInstance()
+    StataData(Dict(), Dict(), Dict(), Dict() )
+end
+
 function destructor()
     stata_init  = nothing
     stata = nothing

@@ -23,18 +23,23 @@ function printToBuffer()
 end
 
 function test_get_set()
-    # df = DataFrame()
-    # a = variable["v"]
-    # print( a)
-    # dataset[Symbol("v")] = [1; 2]
-    # print(dataset)
-    # # TODO: This does not work
-    # df[Symbol("v")] = matrix["nvm"]
+    stata.matrix["B"] = transpose(stata.matrix["A"])
+    if haskey(stata_init, "set_matrices")
+        print(stata_init["set_matrices"])
+    else
+        print("NOPE")
+
+    end
+end
+
+function test_get_set2()
+    if haskey(stata_init, "set_matrices")
+        print(stata_init["set_matrices"])
+    else
+        print("NOPE")
+
+    end
+
     stata.matrix["B"] = transpose(stata.matrix["A"])
     print(stata.matrix["B"])
-    # stata.global_macro["global1"] = "Test"
-    # stata.global_macro["global2"] =  "Second string"
-    # stata.scalar["scalar2"] = 2*stata.scalar["scalar1"]
-    # stata.variable["nv"] = 3.*stata.variable["v"]
-    # stata.matrix["nvm"] = 2.*stata.variable["v"].*stata.variable["touse"]
 end

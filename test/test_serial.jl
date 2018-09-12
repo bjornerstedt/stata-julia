@@ -4,5 +4,8 @@ include("init.jl")
 
 io = open("test/test_serial.bin", "r");
 stata = deserialize(io)
-print(stata.matrix["A"])
+stata.matrix["A"]
+stata.matrix["B"]
 print(stata.global_macro["global1"])
+
+a=2

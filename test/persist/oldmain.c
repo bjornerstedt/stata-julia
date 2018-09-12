@@ -1,20 +1,5 @@
-#include "stplugin.h"
-#include <julia.h>
-#include <strings.h>
-#include "statajulia.h"
-
-JULIA_DEFINE_FAST_TLS();
-
-// Stata plugin entry point
-STDLL stata_call(int argc, char *argv[])
-{
-	return main(argc, argv);
-}
-
 // C application entry point
-int main(int argc, char *argv[])
-	{
-	jl_init();
+int main2(int argc, char *argv[]) {
 	int retval = 0;
 	char buf[80] ;
 
@@ -83,56 +68,5 @@ int main(int argc, char *argv[])
 	retval = process( function, invoked++);
 
 	// jexec("StataJulia.destructor()");
-	jl_atexit_hook(0);
 	return(retval) ;
-}
-
-// Execute single Julia command, returning the result in a Stata macro
-// NOTE that it does not handla return values well, and does not use init values.
-int execute_command(char *command) {
-	char buf[80];
-	if (strlen(command) == 0) {
-		SF_error("Either using och command options have to be set");
-		return 1456;
-	}
-
-	// Evaluate command:
-	jl_value_t *ret = jl_eval_string(command);
-	if (jl_exception_occurred()) {
-		SF_error("Could not understand Julia command\n");
-		return 1534;
-	}
-	if (jl_typeis(ret, jl_float64_type)) {
-			double ret_unboxed = jl_unbox_float64(ret);
-			snprintf(buf, 80, "Result: %f\n", ret_unboxed) ;
-			SF_display(buf);
-			// TODO: Fix return values as global
-			// SF_scal_save("r(command)", ret_unboxed);
-			// SF_scal_save("command", ret_unboxed);
-			return 0;
-	} else {
-		int ret_unboxed = jl_unbox_int64(ret);
-		if (jl_exception_occurred()) {
-			SF_error("Only expressions returning a float or double are allowed.\n");
-			return 1;
-		}
-		snprintf(buf, 80, "Result: %d\n", ret_unboxed) ;
-		SF_display(buf);
-		return 0;
-	}
-}
-
-int julia_set_varlist(char* name, char* varlist) {
-	if (varlist == NULL || !strlen(varlist)) {
-		return 1;
-	}
-	char command[200];
-	snprintf(command, 80, "StataJulia.addJuliaInitString(\"%s\", \"%s\")", name, varlist);
-	printf("%s\n", command );
-	int ret = jl_eval_string(command);
-	if (jl_exception_occurred()) {
-		SF_error("Setting init list in Julia failed\n");
-		return 3293;
-	}
-	return 0;
 }
