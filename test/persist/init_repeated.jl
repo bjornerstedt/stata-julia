@@ -1,5 +1,5 @@
 # init.jl
-include("statajulia.jl")
+# include("statajulia.jl")
 using DataFrames
 using StataJulia
 
@@ -13,16 +13,16 @@ function initParams()
 end
 
 
-function test_get_set(stata::Dict)
-    # function test_get_set(stata::StataData)
-    # stata.matrix["B"] = transpose(stata.matrix["A"])
-    stata["B"] = transpose(stata["A"])
-    # if haskey(stata, "A")
-    #     print(stata["A"] )
-    # else
-    #     print("NOPE")
-    # end
-end
+# function test_get_set(stata::Dict)
+#     # function test_get_set(stata::StataData)
+#     # stata.matrix["B"] = transpose(stata.matrix["A"])
+#     stata["B"] = transpose(stata["A"])
+#     # if haskey(stata, "A")
+#     #     print(stata["A"] )
+#     # else
+#     #     print("NOPE")
+#     # end
+# end
 
 function test_get_set2()
     print("HÅ")
