@@ -11,10 +11,18 @@ plugin call calljulia , test_get_set
 matlist A
 matlist B
 
-program drop calljulia
+*program drop calljulia
 
-program calljulia, plugin
+*program calljulia, plugin
 matrix A = 2*(1,2\3,4)
+
+matrix B = A
+* plugin call calljulia , "`function'"  "`using'"  "`command'"  "`save'"
+plugin call calljulia  , test_get_set
+matlist A
+matlist B
+
+matrix A = 3*(1,2\3,4)
 
 matrix B = A
 * plugin call calljulia , "`function'"  "`using'"  "`command'"  "`save'"

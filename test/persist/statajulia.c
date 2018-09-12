@@ -25,46 +25,40 @@ int main(int argc, char *argv[]) {
 	char* function = argv[0];
 	char* using = (argc ==2)?argv[1]:"";
 
-	// Run file in 'using' if it has been specified
-	 static int invoked = 0;
 	 jl_value_t *stata;
 	 jl_value_t *stata_data;
-	if (!invoked) {
-		using = "StataJulia.jl";
-		if (strlen(using)) {
-			snprintf(buf, 80, "include(\"%s\")", using) ;
-			jl_eval_string(buf);
-			if (jl_exception_occurred()) {
-				snprintf(buf, 80, "File %s not executed, error: %s.\n", using, jl_typeof_str(jl_exception_occurred())) ;
-				SF_error(buf);
-				return 101;
-			}
-		}
-		jl_eval_string("using StataJulia");
-		if(jl_exception_occurred()) {
-			snprintf(buf, 80, "using StataJulia error %s\n", jl_typeof_str(jl_exception_occurred())) ;
+	printf("First time\n" );
+	using = "StataJulia.jl";
+	if (strlen(using)) {
+		snprintf(buf, 80, "include(\"%s\")", using) ;
+		jl_eval_string(buf);
+		if (jl_exception_occurred()) {
+			snprintf(buf, 80, "File %s not executed, error: %s.\n", using, jl_typeof_str(jl_exception_occurred())) ;
 			SF_error(buf);
-			return 1019;
+			return 101;
 		}
-	} else {
-		SF_display("Repeated invocation!\n");
 	}
-		stata = jl_eval_string("StataJulia.getInstance()");
-		if(stata == NULL || jl_exception_occurred()) {
-			char buf[80] ;
-			snprintf(buf, 80, "getInstance(): Could not init:  %s\n" ,jl_typeof_str(jl_exception_occurred()));
-			SF_error(buf);
-		}
-		// stata_data = call_julia("StataJulia", "initParams", NULL, NULL, NULL);
-		stata_data = jl_eval_string("StataJulia.initParams()");
-		if (stata_data == NULL || jl_exception_occurred()) {
-			snprintf(buf, 80, "initParams error:%s. %s\n", using, jl_typeof_str(jl_exception_occurred())) ;
-			SF_error(buf);
-			return 1019;
-		}
-		JL_GC_PUSH2(&stata_data, &stata);
+	stata = jl_eval_string("StataJulia.getInstance()");
+	jl_eval_string("using StataJulia");
+	if(jl_exception_occurred()) {
+		snprintf(buf, 80, "using StataJulia error %s\n", jl_typeof_str(jl_exception_occurred())) ;
+		SF_error(buf);
+		return 1019;
+	}
+	if(stata == NULL || jl_exception_occurred()) {
+		char buf[80] ;
+		snprintf(buf, 80, "getInstance(): Could not init:  %s\n" ,jl_typeof_str(jl_exception_occurred()));
+		SF_error(buf);
+	}
+	// stata_data = call_julia("StataJulia", "initParams", NULL, NULL, NULL);
+	stata_data = jl_eval_string("StataJulia.initParams()");
+	if (stata_data == NULL || jl_exception_occurred()) {
+		snprintf(buf, 80, "initParams error:%s. %s\n", using, jl_typeof_str(jl_exception_occurred())) ;
+		SF_error(buf);
+		return 1019;
+	}
+	JL_GC_PUSH2(&stata_data, &stata);
 
-	invoked++;
 	int rc = 0;
 	if( (rc = matrices(stata, stata_data)) )  return rc ;
 
