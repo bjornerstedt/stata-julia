@@ -25,21 +25,23 @@ int main(int argc, char *argv[]) {
 	char* function = argv[0];
 	char* using = (argc ==2)?argv[1]:"";
 
-	 jl_value_t *stata;
-	 jl_value_t *stata_data;
-	printf("First time\n" );
-	using = "StataJulia.jl";
+	jl_value_t *stata;
+	jl_value_t *stata_data;
+
+	jl_eval_string("include(\"StataJulia.jl\")");
+	jl_eval_string("using StataJulia");
 	if (strlen(using)) {
-		snprintf(buf, 80, "include(\"%s\")", using) ;
+		snprintf(buf, 80, "include(\"%s.jl\")", using) ;
 		jl_eval_string(buf);
 		if (jl_exception_occurred()) {
 			snprintf(buf, 80, "File %s not executed, error: %s.\n", using, jl_typeof_str(jl_exception_occurred())) ;
 			SF_error(buf);
 			return 101;
 		}
+		snprintf(buf, 80, "using %s", using) ;
+		jl_eval_string(buf);
 	}
 	stata = jl_eval_string("StataJulia.getInstance()");
-	jl_eval_string("using StataJulia");
 	if(jl_exception_occurred()) {
 		snprintf(buf, 80, "using StataJulia error %s\n", jl_typeof_str(jl_exception_occurred())) ;
 		SF_error(buf);
@@ -50,8 +52,8 @@ int main(int argc, char *argv[]) {
 		snprintf(buf, 80, "getInstance(): Could not init:  %s\n" ,jl_typeof_str(jl_exception_occurred()));
 		SF_error(buf);
 	}
-	// stata_data = call_julia("StataJulia", "initParams", NULL, NULL, NULL);
-	stata_data = jl_eval_string("StataJulia.initParams()");
+	// function without parameters is to set data
+	stata_data = call_julia("StataJulia", function , NULL, NULL, NULL);
 	if (stata_data == NULL || jl_exception_occurred()) {
 		snprintf(buf, 80, "initParams error:%s. %s\n", using, jl_typeof_str(jl_exception_occurred())) ;
 		SF_error(buf);
@@ -67,11 +69,12 @@ int main(int argc, char *argv[]) {
 		char buf[80] ;
 		snprintf(buf, 80, "process(): Could not run Julia function: %s, %s\n", function ,jl_typeof_str(jl_exception_occurred()));
 		SF_error(buf);
+		return 2341;
 	}
 	if( (rc = set_matrices(stata, stata_data)) )  return rc ;
 
 	JL_GC_POP();
-	return(rc) ;
+	return 0;
 }
 
 // ****************************************************
@@ -79,8 +82,8 @@ int main(int argc, char *argv[]) {
 char* getNameFromList(jl_value_t *stata_data, char* namelist, int index) {
 	jl_function_t *func = jl_get_function(jl_eval_string("StataJulia"), "nameGetVar");
 	if (func == NULL || jl_exception_occurred()) {
-		SF_display("aaaagh");
-		return NULL;
+		SF_display("Could not find function nameGetVar.");
+		return "";
 	}
 	jl_value_t *ret = jl_call3(func, stata_data, jl_cstr_to_string(namelist), jl_box_int32(index));
 	if(ret == NULL || jl_exception_occurred()) {
