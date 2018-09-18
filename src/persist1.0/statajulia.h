@@ -27,3 +27,6 @@ int displayPrintBuffer();
 int jexec(char *command);
 int julia_set_varlist(char* name, char* varlist);
 int create_selection();
+
+#define SF_display(a)	printf(a)
+#define SF_error(a)	printf(a)

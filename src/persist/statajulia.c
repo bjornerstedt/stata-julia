@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 	int retval = 0;
 	char buf[80] ;
 
-	if (argc < 1) {
+	if (argc < 2) {
 		SF_error("Internal error. The ADO file has sent the wrong number of pars");
 		return 1;
 	}
@@ -28,18 +28,24 @@ int main(int argc, char *argv[]) {
 	jl_value_t *stata;
 	jl_value_t *stata_data;
 
-	jl_eval_string("include(\"StataJulia.jl\")");
 	jl_eval_string("using StataJulia");
+
+	// jl_eval_string("include(\"SJExample.jl\")");
+	if(jl_exception_occurred()) {
+		snprintf(buf, 80, "Include error  %s\n", jl_typeof_str(jl_exception_occurred())) ;
+		SF_error(buf);
+		return 1019;
+	}
 	if (strlen(using)) {
-		snprintf(buf, 80, "include(\"%s.jl\")", using) ;
+		snprintf(buf, 80, "using %s", using) ;
 		jl_eval_string(buf);
+		// snprintf(buf, 80, "include(\"%s.jl\")", using) ;
+		// jl_eval_string(buf);
 		if (jl_exception_occurred()) {
 			snprintf(buf, 80, "File %s not executed, error: %s.\n", using, jl_typeof_str(jl_exception_occurred())) ;
 			SF_error(buf);
 			return 101;
 		}
-		snprintf(buf, 80, "using %s", using) ;
-		jl_eval_string(buf);
 	}
 	stata = jl_eval_string("StataJulia.getInstance()");
 	if(jl_exception_occurred()) {
@@ -53,7 +59,7 @@ int main(int argc, char *argv[]) {
 		SF_error(buf);
 	}
 	// function without parameters is to set data
-	stata_data = call_julia("StataJulia", function , NULL, NULL, NULL);
+	stata_data = call_julia("SJExample", function , NULL, NULL, NULL);
 	if (stata_data == NULL || jl_exception_occurred()) {
 		snprintf(buf, 80, "initParams error:%s. %s\n", using, jl_typeof_str(jl_exception_occurred())) ;
 		SF_error(buf);
@@ -64,7 +70,7 @@ int main(int argc, char *argv[]) {
 	int rc = 0;
 	if( (rc = matrices(stata, stata_data)) )  return rc ;
 
-	call_julia("StataJulia", function, stata, NULL, NULL);
+	call_julia("SJExample", function, stata, NULL, NULL);
 	if(jl_exception_occurred()) {
 		char buf[80] ;
 		snprintf(buf, 80, "process(): Could not run Julia function: %s, %s\n", function ,jl_typeof_str(jl_exception_occurred()));

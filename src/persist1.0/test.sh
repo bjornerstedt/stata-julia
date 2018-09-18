@@ -1,5 +1,5 @@
 
-$JULIA_HOME/share/julia/julia-config.jl --cflags --ldflags --ldlibs | xargs gcc -bundle -DSYSTEM=APPLEMAC stplugin.c statajulia.c calljulia.c basic_functions.c -o calljulia.plugin
+$JULIA_HOME/share/julia/julia-config.jl --cflags --ldflags --ldlibs | xargs gcc statajulia.c calljulia.c basic_functions.c -o calljulia.out
 # Check return value
 if [ $? -eq 0 ]
 then
@@ -9,4 +9,4 @@ else
   exit
 fi
 
-stata < test_repeated.do
+calljulia.out < test_repeated.do

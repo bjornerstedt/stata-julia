@@ -1,20 +1,12 @@
-#include "stplugin.h"
 #include <julia.h>
 #include <strings.h>
 #include "statajulia.h"
 
 JULIA_DEFINE_FAST_TLS();
 
-// Stata plugin entry point
-STDLL stata_call(int argc, char *argv[]) {
-	jl_init();
-	int retval = main(argc, argv);
-	jl_atexit_hook(0);
-	return retval;
-}
-
 // C application entry point
 int main(int argc, char *argv[]) {
+	jl_init();
 	int retval = 0;
 	char buf[80] ;
 
@@ -78,6 +70,7 @@ int main(int argc, char *argv[]) {
 	if( (rc = set_matrices(stata, stata_data)) )  return rc ;
 
 	JL_GC_POP();
+	jl_atexit_hook(0);
 	return 0;
 }
 

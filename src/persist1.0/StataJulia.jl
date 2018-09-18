@@ -8,19 +8,22 @@ struct StataData
     # stata_init::Dict
 end
 
+# StataData() = StataData(Dict(), Dict(), Dict(), Dict() )
 StataData() =  Dict()
 
 export StataData
 
 function getInstance()
-    return StataData()
+    return Dict()
 end
 
 function addMatrix(stata::Dict, x::String, y)
     stata[x] = y
+    return stata
 end
 
 function getMatrix(stata::Dict, x::String)
+    # get(stata, x, default)
     stata[x]
 end
 
@@ -48,7 +51,10 @@ getInit() = Dict(
 )
 
 function test_get_set(stata::Dict)
-    stata["B"] = transpose(stata["A"])
+    l = length(stata)
+    print("Length $l\n")
+    # B = transpose(stata["A"])
+
 end
 
 end
