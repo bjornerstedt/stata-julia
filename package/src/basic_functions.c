@@ -3,16 +3,7 @@
 #include <strings.h>
 #include "statajulia.h"
 
-// print Julia buffer
-int displayPrintBuffer() {
-    jl_value_t* ret;
-    ret = jl_eval_string("getPrintBuffer()");
-    if (jl_exception_occurred())
-        SF_error("Failed getting the print Buffer from Julia\n");
-    // jl_string_ptr(ret);
-    SF_display((char*)jl_string_ptr(ret));
-    return 0;
-}
+
 
 // execute Julia command
 int jexec(char *command) {
@@ -30,7 +21,7 @@ int jexec(char *command) {
 // Get global string var from Julia
 int get_julia_string(char *varname, char** str) {
 	jl_value_t *ret = jl_eval_string(varname);
-	if (ret == NULL || jl_exception_occurred()) {
+    if (ret == NULL || jl_exception_occurred()) {
         // Return silently, as not finding string is possible
         char command[80];
         snprintf(command, 80, "Could not get Julia String: %s %s\n", varname, jl_typeof_str(jl_exception_occurred()));
@@ -57,7 +48,7 @@ jl_array_t* create_2D(int rows, int cols) {
 	return x;
 }
 
-jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* y) {
+jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* y, jl_value_t* z) {
     jl_value_t *my_module;
     jl_function_t *func;
     char errbuf[80] ;
@@ -77,8 +68,10 @@ jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* 
 		rv = jl_call0(func);
 	} else if (y == NULL) {
 		rv = jl_call1(func, x);
-	} else {
+	} else if (z == NULL) {
 		rv = jl_call2(func, x, y);
+	} else {
+		rv = jl_call3(func, x, y, z);
 	}
 	if (jl_exception_occurred() || rv == NULL) {
         snprintf(errbuf, 80, "call_julia: Error: %s\n", jl_typeof_str(jl_exception_occurred())) ;

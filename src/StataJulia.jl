@@ -29,6 +29,11 @@ function addJuliaInitString(x, y)
     stata_init[x] = y
 end
 
+function putstata(x, y)
+    print("Init string $x and $y\n")
+    stata_init[x] = y
+end
+
 function nameGetVar(stata_init::Dict, varlist::String, n::Integer)
     if !haskey(stata_init, varlist)
         return("")
@@ -43,12 +48,13 @@ end
 #############
 
 test_get_set() = Dict(
-   "get_matrices" => "A B",
+   "get_matrices" => "A",
    "set_matrices" => "B"
 )
 
 function test_get_set(stata::StataData)
-    stata.matrix["B"] = transpose(stata.matrix["A"])
+    B = transpose(stata.matrix["A"])
+    stata.matrix["B"] = copy(B)
 end
 
 end

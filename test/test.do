@@ -5,7 +5,7 @@
 
 *do ../test/test_serial.do
 
-do ../test/test_repeated.do
+do test_repeated.do
 *do ../test/calljulia.do
 
 ************************************
