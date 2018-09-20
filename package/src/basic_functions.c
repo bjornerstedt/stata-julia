@@ -3,7 +3,38 @@
 #include <strings.h>
 #include "statajulia.h"
 
+char* getNameFromList(jl_value_t *stata_data, char* namelist, int update, int index) {
+	char buf[80] ;
+	// Get function nameGetVar:
+	jl_function_t *func = jl_get_function(jl_eval_string("StataJulia"), "nameGetVar");
+	if (func == NULL || jl_exception_occurred()) {
+		SF_display("Could not find function nameGetVar.");
+		return "";
+	}
+	snprintf(buf, 80, "%s%s", update?"set_":"get_", namelist);
+	jl_value_t *ret = jl_call3(func, stata_data, jl_cstr_to_string(buf), jl_box_int32(index));
+	if(ret == NULL || jl_exception_occurred()) {
+		snprintf(buf, 80, "getNameFromList(): Could not get index: %s\n" ,jl_typeof_str(jl_exception_occurred()));
+		SF_error(buf);
+		return "";
+	}
+	return (char *)jl_string_ptr(ret);
+}
 
+int julia_set_varlist(char* name, char* varlist) {
+	if (varlist == NULL || !strlen(varlist)) {
+		return 1;
+	}
+	char command[200];
+	snprintf(command, 80, "StataJulia.addJuliaInitString(\"%s\", \"%s\")", name, varlist);
+	printf("%s\n", command );
+	int ret = jl_eval_string(command);
+	if (jl_exception_occurred()) {
+		SF_error("Setting init list in Julia failed\n");
+		return 3293;
+	}
+	return 0;
+}
 
 // execute Julia command
 int jexec(char *command) {

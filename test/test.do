@@ -1,6 +1,6 @@
 * Tests to include:
 
-
+global errorcount = 0
 *do ../test/test_getset.do
 
 *do ../test/test_serial.do
