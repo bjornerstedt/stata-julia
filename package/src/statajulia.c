@@ -48,6 +48,15 @@ int main(int argc, char *argv[]) {
 		snprintf(buf, 80, "StataJulia.getInstance() failed:  %s\n" ,jl_typeof_str(jl_exception_occurred()));
 		SF_error(buf);
 	}
+	// TODO: Fix checking
+	// snprintf(buf, 80, "StataJulia.isvalidfunction(%s.%s)", using, function );
+	// SF_error(buf );
+	// if (!jl_unbox_int32(jl_eval_string(buf)) ) {
+	// 	snprintf(buf, 80, "Could not find function %s in module %s\n" , function, using);
+	// 	SF_error(buf);
+	// 	return 999;
+	// }
+
 	// function without parameters is to set data
 	stata_data = call_julia(using, function , NULL, NULL, NULL);
 	if (stata_data == NULL || jl_exception_occurred()) {

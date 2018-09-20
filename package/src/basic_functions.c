@@ -86,6 +86,7 @@ jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* 
     if (module == NULL) {
         func = jl_get_function(jl_current_module, funcname);
     } else {
+		// TODO: test module and func
         my_module = jl_eval_string(module);
         func = jl_get_function(my_module, funcname);
     }

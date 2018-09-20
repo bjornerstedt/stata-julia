@@ -16,6 +16,14 @@ function getInstance()
     return StataData()
 end
 
+function isvalidfunction(x)
+    try
+        isa(x, Function) ? 1 : 0
+    catch
+        0
+    end
+end
+
 function addMatrix(stata::StataData, x::String, y)
     stata.matrix[x] = y
 end
