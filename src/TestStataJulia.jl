@@ -13,7 +13,7 @@ function test_repeated(stata::StataData)
 end
 
 test_rw() = Dict(
-    "get_variables"  => "n var1",
+    "get_variables"  => "n var1 var2",
     "set_variables" => "var2",
     "set_matrices" => "matfromvar",
     "get_scalars" => "scalar1",
@@ -26,8 +26,8 @@ function test_rw(stata::StataData)
     x = stata.global_macro["global1"]
     stata.global_macro["global2"] =  "Modified $x"
     stata.scalar["scalar2"] = 2*stata.scalar["scalar1"]
-    # x = 3.*stata.variable["var1"]
-    # stata.variable["var2"] = copy(x)
+    x = 3 .* stata.variable["n"]
+    stata.variable["var2"] = copy(x)
     x = stata.variable["var1"] .* stata.variable["touse"]
     stata.matrix["matfromvar"] = copy(x)
 end

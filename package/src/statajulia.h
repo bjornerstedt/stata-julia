@@ -5,12 +5,12 @@ int process(char *using, char *funcname, jl_value_t *stata,  jl_value_t *stata_d
 // int set_matrix(char* name, jl_array_t *x);
 int set_matrix(jl_value_t *stata, char* name);
 
-int set_variable(char* name, int var_index, jl_array_t *x);
+int set_variable(jl_value_t *stata, char* name, int var_index);
 // jl_array_t *get_matrix(char* name);
 // int get_matrix(jl_value_t *stata, char* name);
 int matrix(jl_value_t *stata, char* name, int update);
 
-int get_variable(jl_value_t *stata, char* name, int update, int var_index);
+int get_variable(jl_value_t *stata, char* name, int var_index);
 jl_value_t *get_jl_var(char* name);
 int set_jl_var(char* name, jl_value_t *x);
 int execute_command(char *command);

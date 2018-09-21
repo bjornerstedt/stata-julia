@@ -87,6 +87,7 @@ int process(char *using, char *function, jl_value_t *stata,  jl_value_t *stata_d
 		SF_error(buf);
 		return 2341;
 	}
+	if( (rc = variables(stata, stata_data, 1)) )  return rc ;
 	if( (rc = matrices(stata, stata_data, 1)) )  return rc ;
 	if( (rc = scalars(stata, stata_data, 1)) )  return rc ;
 	if( (rc = macros(stata, stata_data, 1)) )  return rc ;

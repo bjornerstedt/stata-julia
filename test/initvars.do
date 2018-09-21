@@ -2,7 +2,7 @@
 
 version 13
 clear all
-program calljulia, plugin
+program statajulia, plugin
 
 * Generate example dataset:
 set obs 10

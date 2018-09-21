@@ -5,61 +5,40 @@
 
 
 int variables(jl_value_t *stata, jl_value_t *stata_data, int update) {
-	char* str = NULL;
-	// Variable not required to be defined
-	create_selection(stata);
-
+	if (!update) {
+		create_selection(stata);
+	}
 	int i = 1;
-	char* name = getNameFromList(stata_data, "variables", update, i++);
+	// Loop through all variables
+	char* name = getNameFromList(stata_data, "variables", 0, i);
     while( strlen(name) ) {
-		int ret = get_variable(stata, name, update, i - 1);
-		if( ret) {
-			char buf[80];
-			snprintf(buf, 80, "Could not get Stata var: %s, %d\n", name, i);
-			SF_error(buf);
-			return ret;
-		}
-		name = getNameFromList(stata_data, "variables", update, i++);
-    }
-    return 0;
-}
-
-int set_variables(int has_selection) {
-	char* str = NULL;
-	int rc = 0;
-	// Variable not required to be defined
-
-	jl_value_t *x = NULL;
-	int i = 1;
-	char *name = " ";
-	char command[80];
-	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
-	if( (rc = get_julia_string(command, &name)) ) return rc;
-    while( strlen(name) ) {
-	// Check whether variable should be updated
-		snprintf(command, 80, "StataJulia.isSetVar(\"%s\")", name);
-		x = jl_eval_string(command);
-		if( jl_exception_occurred() || x == NULL ) {
-			char buf[80];
-	        snprintf(buf, 80, "ERROR: %s\n", jl_typeof_str(jl_exception_occurred()));
-	        SF_display(buf);
-			return 0;
-		}
-		// Update if it should
-		if(jl_unbox_int32(x)) {
-			snprintf(command, 80, "StataJulia.getVariable(\"%s\")", name);
-			if( (x = jl_eval_string(command)) == NULL ) {
-				SF_error("Could not get Julia var\n");
-				return 3241;
+		if (update) {
+			// Check whether variable should be updated
+			jl_array_t *x = call_julia("StataJulia", "isSetVar", stata_data, jl_cstr_to_string(name), NULL );
+			if( jl_exception_occurred() || x == NULL ) {
+				char buf[80];
+				snprintf(buf, 80, "ERROR: %s\n", jl_typeof_str(jl_exception_occurred()));
+				SF_display(buf);
+				return 4323;
 			}
-			if(set_variable(name, i, (jl_array_t *)x)) {
-				SF_error("Could not set Stata var\n");
-				return 2347;
+			// Return if it should not be updated
+			if(jl_unbox_int32(x)) {
+				int ret = set_variable(stata, name, i );
+				if(ret) {
+					SF_error("Could not set Stata var\n");
+					return 2347;
+				}
+			}
+		} else {
+			int ret = get_variable(stata, name, i );
+			if( ret) {
+				char buf[80];
+				snprintf(buf, 80, "Could not get Stata var: %s, %d\n", name, i);
+				SF_error(buf);
+				return ret;
 			}
 		}
-		// Get next variable
-		snprintf(command, 80, "StataJulia.nameGetVar(%d)", ++i);
-		if( (rc = get_julia_string(command, &name)) ) return rc;
+		name = getNameFromList(stata_data, "variables", 0, ++i);
     }
     return 0;
 }
@@ -95,7 +74,6 @@ int macros(jl_value_t *stata, jl_value_t *stata_data, int update) {
 				return 3296;
 			}
 			content = jl_string_ptr(x);
-			printf("%s, %s\n", name, content);
 			if ((rc = SF_macro_save(name, (char*)content)) ){
 				snprintf(buf, 80, "Saving macro to Stata failed: %s\n", name);
 				SF_error(buf);
@@ -148,7 +126,6 @@ int scalars(jl_value_t *stata, jl_value_t *stata_data, int update) {
 			}
 		} else {
 			if((rc = SF_scal_use(name, &d))) return(rc) ;   /* read scalar */
-			printf("scalar: %lf\n", d);
 			jl_value_t *x = jl_box_float64(d);
 			if( call_julia("StataJulia", "addScalar", stata, jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) {
 				snprintf(buf, 80, "addScalar error: Could not add scalar: %s\n", name);
@@ -253,7 +230,7 @@ int create_selection(jl_value_t *stata) {
 
 
 // Get Stata global array by name
-int get_variable(jl_value_t *stata, char* name, int update, int var_index) {
+int get_variable(jl_value_t *stata, char* name, int var_index) {
 	ST_int i, j, rows;
 	ST_retcode rc ;
 	rows = SF_in2() ;
@@ -289,12 +266,18 @@ int get_variable(jl_value_t *stata, char* name, int update, int var_index) {
 }
 
 // Set either by name (matrices) or by index (variables)
-int set_variable(char* name, int var_index, jl_array_t *x) {
+int set_variable(jl_value_t *stata, char* name, int var_index) {
 	char errbuf[80] ;
 	ST_int i, j, rows;
 	rows = SF_in2() ;
 	ST_retcode rc ;
 	ST_double z;
+
+	jl_array_t *x = call_julia("StataJulia", "getVariable", stata, jl_cstr_to_string(name), NULL );
+	if(jl_exception_occurred() || x == NULL ) {
+		SF_error("Could not get Julia var\n");
+		return 3241;
+	}
 
 	if (rows == 0) {
 		snprintf(errbuf, 80, "Could not get Stata variable for setting: %s\n", name) ;
