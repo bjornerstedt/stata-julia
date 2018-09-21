@@ -16,126 +16,90 @@ int matrices(jl_value_t *stata, jl_value_t *stata_data, int update) {
     return 0;
 }
 
-int macros() {
+int macros(jl_value_t *stata, jl_value_t *stata_data, int update) {
 	char *ret = NULL;
 	char str[200];
 	char buf[200];
 	// Variable not required to be defined
-	if( get_julia_string("stata_init[\"get_macros\"]", &ret) )
-		return 0;
-	strcpy(str, ret);
-    char *name = strtok(str, " ");
-    while( name != NULL ) {
-		char content[80];
-		char command[80];
-		int rc = 0;
-		if ((rc = SF_macro_use(name, (char *)content, 80) ) ){
-			snprintf(buf, 80, "Getting macro from Julia failed: %s\n", name);
-			SF_error(buf);
-			return rc;
+	int rc = 0;
+	char command[80];
+	int i = 1;
+	char* name = getNameFromList(stata_data, "macros", update, i++);
+    while( strlen(name) ) {
+		if (update) {
+			char *content;
+			jl_value_t* x = call_julia("StataJulia", "getMacro", stata, jl_cstr_to_string(name), NULL );
+			if ( x == NULL  || jl_exception_occurred()) {
+				snprintf(buf, 80, "Getting macro from Julia failed: %s\n", name);
+				SF_error(buf);
+				return 3296;
+			}
+			content = jl_string_ptr(x);
+			printf("%s, %s\n", name, content);
+			if ((rc = SF_macro_save(name, (char*)content)) ){
+				snprintf(buf, 80, "Saving macro to Stata failed: %s\n", name);
+				SF_error(buf);
+				return rc;
+			}
+		} else {
+			char content[80];
+			if ((rc = SF_macro_use(name, (char *)content, 80) ) ) {
+				snprintf(buf, 80, "Getting macro from Stata failed: %s\n", name);
+				SF_error(buf);
+				return rc;
+			}
+			call_julia("StataJulia", "addMacro", stata, jl_cstr_to_string(name), jl_cstr_to_string(content) );
+			if (jl_exception_occurred()) {
+				snprintf(buf, 80, "Setting macro in Julia failed: %s\n", name);
+				SF_error(buf);
+				return 3296;
+			}
 		}
-		snprintf(command, 80, "StataJulia.addMacro(\"%s\", \"%s\")", name, content);
-		jl_eval_string(command);
-		if (jl_exception_occurred()) {
-			snprintf(buf, 80, "Setting macro in Julia failed: %s\n", name);
-			SF_error(buf);
-			return 3296;
-		}
-		// Get next name
-        name = strtok(NULL, " ");
+		name = getNameFromList(stata_data, "macros", update, i++);
     }
     return 0;
 }
 
-int set_macros() {
-	char *ret = NULL;
-	char str[200];
-	char buf[200];
-	// Variable not required to be defined
-	if( get_julia_string("stata_init[\"set_macros\"]", &ret) )
-		return 0;
-	strcpy(str, ret);
-    char *name = strtok(str, " ");
-    while( name != NULL ) {
-		const char* content;
-		char command[80];
-		snprintf(command, 80, "StataJulia.getMacro(\"%s\")", name);
-		jl_value_t* ret = jl_eval_string(command);
-		if (jl_exception_occurred()) {
-			snprintf(buf, 80, "Getting macro from Julia failed: %s\n", name);
-			SF_error(buf);
-			return 3296;
-		}
-		content = jl_string_ptr(ret);
-		int rc = 0;
-		if ((rc = SF_macro_save(name, (char*)content)) ){
-			snprintf(buf, 80, "Getting macro from Julia failed: %s\n", name);
-			SF_error(buf);
-			return rc;
-		}
-        name = strtok(NULL, " ");
-    }
-    return 0;
-}
-
-int scalars() {
+int scalars(jl_value_t *stata, jl_value_t *stata_data, int update) {
 	char *ret = NULL;
 	char str[200];
 	char buf[200];
 	int rc = 0;
 	ST_double d;
 	// Variable not required to be defined
-	if( get_julia_string("stata_init[\"get_scalars\"]", &ret) )
-		return 0;
-	strcpy(str, ret);
-    char *name = strtok(str, " ");
-    while( name != NULL ) {
-		if((rc = SF_scal_use(name, &d))) return(rc) ;   /* read scalar */
-		jl_value_t *x = jl_box_float64(d);
-		if( call_julia("StataJulia", "addScalar", jl_cstr_to_string(name), (jl_value_t *)x , NULL) == NULL ) {
-			snprintf(buf, 80, "Could not add scalar: %s\n", name);
-			SF_error(buf);
-			return 3216;
+	int i = 1;
+	char* name = getNameFromList(stata_data, "scalars", update, i++);
+    while( strlen(name) ) {
+		if (update) {
+			jl_value_t *x;
+			// TODO: only floats work
+			x = call_julia("StataJulia", "getScalar", stata, jl_cstr_to_string(name), NULL );
+			if( x == NULL  || jl_exception_occurred()) {
+				snprintf(buf, 80, "Could not get scalar: %s\n", name);
+				SF_error(buf);
+				return 5216;
+			}
+
+			d = jl_unbox_float64(x);
+			if((rc = SF_scal_save(name, d))) {
+				snprintf(buf, 80, "Could not save scalar: %s", name);
+				SF_error(buf);
+				return rc;
+			}
+		} else {
+			if((rc = SF_scal_use(name, &d))) return(rc) ;   /* read scalar */
+			printf("scalar: %lf\n", d);
+			jl_value_t *x = jl_box_float64(d);
+			if( call_julia("StataJulia", "addScalar", stata, jl_cstr_to_string(name), (jl_value_t *)x ) == NULL ) {
+				snprintf(buf, 80, "addScalar error: Could not add scalar: %s\n", name);
+				SF_error(buf);
+				return 3216;
+			}
 		}
-		// Get next name
-        name = strtok(NULL, " ");
+		name = getNameFromList(stata_data, "scalars", update, i++);
     }
     return 0;
 }
-
-int set_scalars() {
-	char *ret = NULL;
-	char str[200];
-	char buf[200];
-	int rc = 0;
-	ST_double d = 0;
-	// Variable not required to be defined
-	if( get_julia_string("stata_init[\"set_scalars\"]", &ret) )
-		return 0;
-	strcpy(str, ret);
-    char *name = strtok(str, " ");
-    while( name != NULL ) {
-		jl_value_t *x;
-		// TODO: only floats work
-		char command[80];
-		snprintf(command, 80, "StataJulia.getScalar(\"%s\")", name);
-		if( (x = jl_eval_string(command)) == NULL ) {
-			snprintf(buf, 80, "Could not get scalar: %s\n", name);
-			SF_error(buf);
-			return 5216;
-		}
-
-		d = jl_unbox_float64(x);
-		if((rc = SF_scal_save(name, d))) {
-			snprintf(buf, 80, "Could not save scalar: %s", name);
-			SF_error(buf);
-			return rc;
-		}
-        name = strtok(NULL, " "); // Get next name
-    }
-    return 0;
-}
-
 
 
 // ---------------- Get individual values --------------------

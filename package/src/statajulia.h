@@ -20,10 +20,10 @@ int set_variables(int first_time);
 int matrices(jl_value_t *stata, jl_value_t *stata_data, int update);
 int set_matrices(jl_value_t *stata, jl_value_t *stata_data);
 
-int macros();
-int set_macros();
-int scalars();
-int set_scalars();
+int macros(jl_value_t *stata, jl_value_t *stata_data, int update);
+int set_macros(jl_value_t *stata, jl_value_t *stata_data, int update);
+int scalars(jl_value_t *stata, jl_value_t *stata_data, int update);
+int set_scalars(jl_value_t *stata, jl_value_t *stata_data, int update);
 int getIndices(char* list, char* list2, int tokenIndex[]);
 int get_julia_string(char *command, char** str);
 jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* y, jl_value_t* z);

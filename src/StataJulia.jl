@@ -32,6 +32,22 @@ function getMatrix(stata::StataData, x::String)
     stata.matrix[x]
 end
 
+function addScalar(stata::StataData, x::String, y::Number)
+    stata.scalar[x] = y
+end
+
+function getScalar(stata::StataData, x::String)
+    Float64(stata.scalar[x])
+end
+
+function addMacro(stata::StataData, x::String, y)
+    stata.global_macro[x] = y
+end
+
+function getMacro(stata::StataData, x::String)
+    stata.global_macro[x]
+end
+
 function addJuliaInitString(x, y)
     print("Init string $x and $y\n")
     stata_init[x] = y
@@ -51,18 +67,6 @@ function nameGetVar(stata_init::Dict, varlist::String, n::Integer)
         return("")
     end
     return String(names[n])
-end
-
-#############
-
-test_get_set() = Dict(
-   "get_matrices" => "A",
-   "set_matrices" => "B"
-)
-
-function test_get_set(stata::StataData)
-    B = transpose(stata.matrix["A"])
-    stata.matrix["B"] = copy(B)
 end
 
 end

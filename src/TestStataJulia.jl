@@ -22,9 +22,9 @@ test_rw() = Dict(
 )
 
 function test_rw(stata::StataData)
-    stata.global_macro["global1"] = "Test"
-    # stata.global_macro["global2"] =  "Second string"
-    # stata.scalar["scalar2"] = 2*stata.scalar["scalar1"]
+    x = stata.global_macro["global1"]
+    stata.global_macro["global2"] =  "Modified $x"
+    stata.scalar["scalar2"] = 2*stata.scalar["scalar1"]
     # x = 3.*stata.variable["var1"]
     # stata.variable["var2"] = copy(x)
     # x = 2.*stata.variable["v"].*stata.variable["touse"]

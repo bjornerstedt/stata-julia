@@ -77,6 +77,8 @@ int process(char *using, char *function, jl_value_t *stata,  jl_value_t *stata_d
 
 	int rc = 0;
 	if( (rc = matrices(stata, stata_data, 0)) )  return rc ;
+	if( (rc = scalars(stata, stata_data, 0)) )  return rc ;
+	if( (rc = macros(stata, stata_data, 0)) )  return rc ;
 
 	call_julia(using, function, stata, NULL, NULL);
 	if(jl_exception_occurred()) {
@@ -86,5 +88,7 @@ int process(char *using, char *function, jl_value_t *stata,  jl_value_t *stata_d
 		return 2341;
 	}
 	if( (rc = matrices(stata, stata_data, 1)) )  return rc ;
+	if( (rc = scalars(stata, stata_data, 1)) )  return rc ;
+	if( (rc = macros(stata, stata_data, 1)) )  return rc ;
 
 }
