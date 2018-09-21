@@ -21,11 +21,11 @@ To test the program, run `package/test.do` in Stata.
 The Stata syntax is
 
 ```
-julia [varlist] [if] [in] , [function(string)] [using(string)] [command(string)] [save(string)]
+julia [varlist] [if] [in] , [function(string)] [module(string)] [command(string)] [save(string)]
 ```
 
-* `using` - is the Julia script that contains init parameters and the method to invoke.
-* `function` - is the method to invoke, defined in the using file
+* `module` - is the Julia module that contains init parameters and the function to invoke.
+* `function` - is the function to invoke, defined in the using file
 * `command` - can be used to simply invoke a command without creating a script.
 * `save` - specifies a filename to serialize the data in Julia in.
 
@@ -37,14 +37,16 @@ A variable `touse` is created with value 1 if in selection, 0 otherwise. This va
 * Before invoking the Julia method, the interface opens the Julia script specified in `using()` and imports the data as specified in this file.
 * All data are in the global structure `stata`. It contins the dataset, and all imported matrices, scalars and macros.
 
-`stata.dataset` is a DataFrame with the data
-`stata.macro["name"]` - a Dict with all macros
-`stata.scalar["name"]` - a Dict with all scalars
-`stata.matrix["name"]` - a Dict with all matrices
+* `stata.variable["name"]` - a Dict with the data variables
+* `stata.matrix["name"]` - a Dict with all matrices
+* `stata.global_macro["name"]` - a Dict with all macros
+* `stata.scalar["name"]` - a Dict with all scalars
+
+The function that is to be invoked has to have a method with one argument of type `StataData`.
 
 ### specifying data to be imported / exported
 
-All data to be used has to be specified in advance. This can either be done with Stata options or in the Julia script invoked at start.
+All data to be used has to be specified in advance. This can either be done with Stata options or in the Julia module.
 
 The following options to the Stata `Julia` command can be used to specify what data to import and export:
 
@@ -55,21 +57,22 @@ The following options to the Stata `Julia` command can be used to specify what d
  `setscalars(namelist)` - scalars to export
  `macros(namelist)` - macros to import
  `setmacros(namelist)` - macros to export
-
-Alternatively, the data can be specified in the Julia script as shown in the following example:
+ 
+Alternatively, the data required to invoke a function can be specified in the Julia script by defining a method taking no arguments, returning a Dict:
 
 ```
 # List variables, matrices, macros and scalars to use
 # All variables set must be in the corresponding get
-stata_init["get_variables"]  = "n v nv"
-stata_init["set_variables"] = "v nv"
-stata_init["get_matrices"] = "A B nvm"
-stata_init["set_matrices"] = "A B nvm"
-# macros and scalars can be set without predefining them in Stata
-stata_init["get_macros"] = "global1 global2"
-stata_init["set_macros"]  = "global1 global2"
-stata_init["get_scalars"]  = "scalar1"
-stata_init["set_scalars"]  = "scalar1 scalar2"
+my_func() = Dict(
+ "set_variables" => "v nv",
+ "get_matrices" => "A B nvm",
+ "set_matrices" => "A B nvm",
+ # macros and scalars can be set without predefining them in Stata
+ "get_macros" => "global1 global2",
+ "set_macros"  => "global1 global2",
+ "get_scalars"  => "scalar1",
+ "set_scalars"  => "scalar1 scalar2"
+)
 ```
 
 ### The interface
@@ -99,4 +102,4 @@ The __stata-julia__ interface is not as ambitious as for example the R package `
 
 After installing Julia, the environment variable JULIA_HOME has to be set, specifying where the Julia executable and all it's libraries are located. The executable is then in the folder `$JULIA_HOME/bin`.
 
-The `julia.ado` program is put in the personal ado-file folder. Stata 13 or above is required.
+The `julia.ado` program is put in the personal ado-file folder. Stata 13 and Julia 1.0 or above are required.
