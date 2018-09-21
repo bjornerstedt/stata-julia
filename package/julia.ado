@@ -1,9 +1,9 @@
 version 13
 
 program julia , rclass
-syntax [varlist] [if] [in], [function(name)] [module(name)] [command(string)] [setvariables(namelist)] ///
-[matrices(namelist)] [setmatrices(namelist)] [scalars(namelist)] [setscalars(namelist)] ///
-[macros(namelist)] [setmacros(namelist)] [save(string)]
+syntax [varlist] [if] [in], [FUNCtion(name)] [module(name)] [command(string)] [SETVARiables(namelist)] ///
+[MATrices(namelist)] [SETMATrices(namelist)] [SCALars(namelist)] [SETSCALars(namelist)] ///
+[MACros(namelist)] [SETMACros(namelist)] [save(string)]
 
 
 plugin call statajulia `varlist' `if' `in' , "`function'"  "`module'"  "`command'"  "`save'" ///

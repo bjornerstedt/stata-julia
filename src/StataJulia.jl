@@ -32,7 +32,7 @@ function getVariable(stata::StataData, x::String)
     stata.variable[x]
 end
 
-function isSetVar(stata_init::Dict{String,String}, str::String)
+function isSetVar(stata_init::Dict, str::String)
     if !haskey(stata_init, "set_variables")
         return 0
     end
@@ -40,8 +40,9 @@ function isSetVar(stata_init::Dict{String,String}, str::String)
     return (in(str, names)) ? 1 : 0;
 end
 
-function serializeData()
-    io = open(stata_init["savefile"], "w")
+
+function serializeData(stata::StataData, filename::String)
+    io = open(filename, "w")
     serialize(io, stata)
     close(io)
 end

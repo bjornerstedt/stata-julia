@@ -15,7 +15,7 @@ end
 test_rw() = Dict(
     # Varlist obtained from Stata
     # TODO: allow specification also in Julia
-    # "get_variables"  => "n var1 var2",
+    "get_variables"  => "n var1 var2",
     "set_variables" => "var2",
     "set_matrices" => "matfromvar",
     "get_scalars" => "scalar1",
@@ -32,6 +32,11 @@ function test_rw(stata::StataData)
     stata.variable["var2"] = copy(x)
     x = stata.variable["var1"] .* stata.variable["touse"]
     stata.matrix["matfromvar"] = copy(x)
+end
+
+# Test the same function, but providing init vars in Stata
+function test_rw_stata(stata::StataData)
+    test_rw(stata)
 end
 
 end
