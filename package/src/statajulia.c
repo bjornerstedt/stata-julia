@@ -67,15 +67,15 @@ int main(int argc, char *argv[]) {
 	JL_GC_PUSH2(&stata_data, &stata);
 
 	retval = process(using, function, stata, stata_data);
-
 	JL_GC_POP();
-	return 0;
+	return retval;
 
 }
 
 int process(char *using, char *function, jl_value_t *stata,  jl_value_t *stata_data) {
 
 	int rc = 0;
+	if( (rc = variables(stata, stata_data, 0)) )  return rc ;
 	if( (rc = matrices(stata, stata_data, 0)) )  return rc ;
 	if( (rc = scalars(stata, stata_data, 0)) )  return rc ;
 	if( (rc = macros(stata, stata_data, 0)) )  return rc ;
@@ -90,5 +90,5 @@ int process(char *using, char *function, jl_value_t *stata,  jl_value_t *stata_d
 	if( (rc = matrices(stata, stata_data, 1)) )  return rc ;
 	if( (rc = scalars(stata, stata_data, 1)) )  return rc ;
 	if( (rc = macros(stata, stata_data, 1)) )  return rc ;
-
+	return 0;
 }

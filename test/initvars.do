@@ -9,7 +9,7 @@ set obs 10
 gen n = _n
 gen var1 = 10 * runiform()
 gen var2 = 0.0
-mkmat var2 , matrix( D)
+mkmat var2 , matrix( matfromvar)
 
 * Generate other data
 matrix A = (1,2\3,4)

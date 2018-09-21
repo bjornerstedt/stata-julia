@@ -4,6 +4,66 @@
 #include "statajulia.h"
 
 
+int variables(jl_value_t *stata, jl_value_t *stata_data, int update) {
+	char* str = NULL;
+	// Variable not required to be defined
+	create_selection(stata);
+
+	int i = 1;
+	char* name = getNameFromList(stata_data, "variables", update, i++);
+    while( strlen(name) ) {
+		int ret = get_variable(stata, name, update, i - 1);
+		if( ret) {
+			char buf[80];
+			snprintf(buf, 80, "Could not get Stata var: %s, %d\n", name, i);
+			SF_error(buf);
+			return ret;
+		}
+		name = getNameFromList(stata_data, "variables", update, i++);
+    }
+    return 0;
+}
+
+int set_variables(int has_selection) {
+	char* str = NULL;
+	int rc = 0;
+	// Variable not required to be defined
+
+	jl_value_t *x = NULL;
+	int i = 1;
+	char *name = " ";
+	char command[80];
+	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
+	if( (rc = get_julia_string(command, &name)) ) return rc;
+    while( strlen(name) ) {
+	// Check whether variable should be updated
+		snprintf(command, 80, "StataJulia.isSetVar(\"%s\")", name);
+		x = jl_eval_string(command);
+		if( jl_exception_occurred() || x == NULL ) {
+			char buf[80];
+	        snprintf(buf, 80, "ERROR: %s\n", jl_typeof_str(jl_exception_occurred()));
+	        SF_display(buf);
+			return 0;
+		}
+		// Update if it should
+		if(jl_unbox_int32(x)) {
+			snprintf(command, 80, "StataJulia.getVariable(\"%s\")", name);
+			if( (x = jl_eval_string(command)) == NULL ) {
+				SF_error("Could not get Julia var\n");
+				return 3241;
+			}
+			if(set_variable(name, i, (jl_array_t *)x)) {
+				SF_error("Could not set Stata var\n");
+				return 2347;
+			}
+		}
+		// Get next variable
+		snprintf(command, 80, "StataJulia.nameGetVar(%d)", ++i);
+		if( (rc = get_julia_string(command, &name)) ) return rc;
+    }
+    return 0;
+}
+
 int matrices(jl_value_t *stata, jl_value_t *stata_data, int update) {
 	int i = 1;
 	int rv;
@@ -114,7 +174,7 @@ int matrix(jl_value_t *stata, char* name, int update) {
 	cols = SF_col(name);
 
 	if (rows == 0) {
-	  	snprintf(errbuf, 80, "Could not get matrix:%s.\n", name) ;
+	  	snprintf(errbuf, 80, "Could not get Stata matrix %s to write to\n", name) ;
 	  	SF_display(errbuf);
 		return 161;
 	}
@@ -168,35 +228,8 @@ int matrix(jl_value_t *stata, char* name, int update) {
 
 // //////////////////////////////////////////////////////////////////
 
-int variables(int has_selection) {
-	char* str = NULL;
-	// Variable not required to be defined
-	if( get_julia_string("stata_init[\"get_variables\"]", &str) )
-		return 0;
-	jl_value_t *x = NULL;
-	int i = 1;
-	char *name = " ";
-	create_selection();
 
-	char command[80];
-	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
-	get_julia_string(command, &name);
-    while( strlen(name) ) {
-		if( (x = (jl_value_t *)get_variable(name, i) ) == NULL) {
-			SF_error("Could not get Stata var\n");
-			return 234;
-		}
-		if( call_julia("StataJulia", "addVariable", jl_cstr_to_string(name) , x, NULL ) == NULL ) {
-			SF_error("Could not add Julia var\n");
-			return 322;
-		}
-		snprintf(command, 80, "StataJulia.nameGetVar(%d)", ++i);
-		get_julia_string(command, &name);
-    }
-    return 0;
-}
-
-int create_selection() {
+int create_selection(jl_value_t *stata) {
 	// Create variable touse
 	ST_int i;
 	ST_retcode rc ;
@@ -211,81 +244,48 @@ int create_selection() {
 		xData[i] = (SF_ifobs(i + 1))?1.0:0.0;
 	}
 
-	if( call_julia("StataJulia", "addVariable", jl_cstr_to_string("touse") , x, NULL ) == NULL ) {
+	if( call_julia("StataJulia", "addVariable", stata, jl_cstr_to_string("touse") , x ) == NULL ) {
 		SF_error("Could not add Julia var touse\n");
 		return 322;
 	}
 	return 0;
 }
 
-int set_variables(int has_selection) {
-	char* str = NULL;
-	int rc = 0;
-	// Variable not required to be defined
-
-	jl_value_t *x = NULL;
-	int i = 1;
-	char *name = " ";
-	char command[80];
-	snprintf(command, 80, "StataJulia.nameGetVar(%d)", i);
-	if( (rc = get_julia_string(command, &name)) ) return rc;
-    while( strlen(name) ) {
-	// Check whether variable should be updated
-		snprintf(command, 80, "StataJulia.isSetVar(\"%s\")", name);
-		x = jl_eval_string(command);
-		if( jl_exception_occurred() || x == NULL ) {
-			char buf[80];
-	        snprintf(buf, 80, "ERROR: %s\n", jl_typeof_str(jl_exception_occurred()));
-	        SF_display(buf);
-			return 0;
-		}
-		// Update if it should
-		if(jl_unbox_int32(x)) {
-			snprintf(command, 80, "StataJulia.getVariable(\"%s\")", name);
-			if( (x = jl_eval_string(command)) == NULL ) {
-				SF_error("Could not get Julia var\n");
-				return 3241;
-			}
-			if(set_variable(name, i, (jl_array_t *)x)) {
-				SF_error("Could not set Stata var\n");
-				return 2347;
-			}
-		}
-		// Get next variable
-		snprintf(command, 80, "StataJulia.nameGetVar(%d)", ++i);
-		if( (rc = get_julia_string(command, &name)) ) return rc;
-    }
-    return 0;
-}
-
 
 // Get Stata global array by name
-jl_array_t *get_variable(char* name, int var_index) {
+int get_variable(jl_value_t *stata, char* name, int update, int var_index) {
 	ST_int i, j, rows;
 	ST_retcode rc ;
 	rows = SF_in2() ;
 
 	if (rows == 0) {
 		char errbuf[80] ;
-	    snprintf(errbuf, 80, "Could not get matrix: %s\n", name) ;
+	    snprintf(errbuf, 80, "Could not get Stata dataset column: %s\n", name) ;
 	    SF_display(errbuf);
-		return NULL;
+		return 654;
 	}
 
 	jl_array_t *x;
-	if( (x = create_2D(rows, 1)) == NULL ) return NULL;
+	if( (x = create_2D(rows, 1)) == NULL ) {
+		SF_error("Could not allocate memory\n");
+		return 755;
+	}
 	// TODO: Should it be a 1d array?
     double *xData = (double*)jl_array_data(x);
 	ST_double z;
 	for( i = 0; i < rows; i++) {
 		// NOTE that Stata uses 1 based index and col row order!
 		if(SF_vdata(var_index, i + 1, &z)) {
-			SF_display("Error");
-			return(NULL);
+			SF_display("get_variable Index Error\n");
+			return(876);
 		}
 		xData[i] = z; // Setting column vector
 	}
-	return x;
+	if( call_julia("StataJulia", "addVariable", stata, jl_cstr_to_string(name) , x ) == NULL ) {
+		SF_error("Could not add Julia var\n");
+		return 322;
+	}
+	return 0;
 }
 
 // Set either by name (matrices) or by index (variables)

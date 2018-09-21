@@ -15,6 +15,7 @@ end
 test_rw() = Dict(
     "get_variables"  => "n var1",
     "set_variables" => "var2",
+    "set_matrices" => "matfromvar",
     "get_scalars" => "scalar1",
     "set_scalars" => "scalar2",
     "get_macros" => "global1",
@@ -27,8 +28,8 @@ function test_rw(stata::StataData)
     stata.scalar["scalar2"] = 2*stata.scalar["scalar1"]
     # x = 3.*stata.variable["var1"]
     # stata.variable["var2"] = copy(x)
-    # x = 2.*stata.variable["v"].*stata.variable["touse"]
-    # stata.matrix["nvm"] = copy(x)
+    x = stata.variable["var1"] .* stata.variable["touse"]
+    stata.matrix["matfromvar"] = copy(x)
 end
 
 end

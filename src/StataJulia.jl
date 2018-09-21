@@ -24,6 +24,33 @@ function isvalidfunction(x)
     end
 end
 
+function addVariable(stata::StataData, x::String, y)
+    stata.variable[x] = y
+end
+
+function getVariable(stata::StataData, x::String)
+    stata.variable[x]
+end
+
+function serializeData()
+    io = open(stata_init["savefile"], "w")
+    serialize(io, stata)
+    close(io)
+end
+
+# TODO: Use function to test serialization
+function deserializeData(fn::String)
+    io = open(fn, "w")
+    stata = deserialize(io)
+    close(io)
+    stata
+end
+
+# To print output in Stata
+function getPrintBuffer()
+    String(printBuffer)
+end
+
 function addMatrix(stata::StataData, x::String, y)
     stata.matrix[x] = y
 end

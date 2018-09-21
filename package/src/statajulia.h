@@ -10,11 +10,12 @@ int set_variable(char* name, int var_index, jl_array_t *x);
 // int get_matrix(jl_value_t *stata, char* name);
 int matrix(jl_value_t *stata, char* name, int update);
 
-jl_array_t *get_variable(char* name, int var_index);
+int get_variable(jl_value_t *stata, char* name, int update, int var_index);
 jl_value_t *get_jl_var(char* name);
 int set_jl_var(char* name, jl_value_t *x);
 int execute_command(char *command);
-int variables(int has_selection);
+
+int variables(jl_value_t *stata, jl_value_t *stata_data, int update);
 int set_variables(int first_time);
 
 int matrices(jl_value_t *stata, jl_value_t *stata_data, int update);
@@ -31,5 +32,5 @@ jl_array_t* create_2D(int rows, int cols);
 int displayPrintBuffer();
 int jexec(char *command);
 int julia_set_varlist(char* name, char* varlist);
-int create_selection();
+int create_selection(jl_value_t *stata);
 char* getNameFromList(jl_value_t *stata_data, char* namelist, int update, int index);
