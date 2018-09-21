@@ -6,8 +6,6 @@
 
 run initvars.do
 
-* Save file
-* julia * ,  save("test_serial.bin") mat(A B) mac(global1) setmac(global2) scal(scalar1) setscal(scalar2)
 
 julia , command(sin(2))
 
@@ -30,3 +28,6 @@ assertcount 3 * n[1] == var2[1]
 
 matlist matfromvar
 assertcount var1[1] == matfromvar[1,1]
+
+* Save file
+julia * ,  save("test_serial.bin") mat(A B) mac(global1) scal(scalar1) 

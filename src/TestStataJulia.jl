@@ -34,7 +34,6 @@ function test_rw(stata::StataData)
     stata.matrix["matfromvar"] = copy(x)
 end
 
-test_rw_stata() = Dict()
 # Test the same function, but providing init vars in Stata
 function test_rw_stata(stata::StataData)
     test_rw(stata)

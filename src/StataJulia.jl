@@ -1,5 +1,7 @@
 module StataJulia
 
+using Serialization
+
 struct StataData
     global_macro::Dict
     scalar::Dict
@@ -47,14 +49,14 @@ end
 
 function serializeData(stata::StataData, filename::String)
     io = open(filename, "w")
-    serialize(io, stata)
+    Serialization.serialize(io, stata.matrix)
     close(io)
 end
 
 # TODO: Use function to test serialization
 function deserializeData(fn::String)
-    io = open(fn, "w")
-    stata = deserialize(io)
+    io = open(fn, "r")
+    stata = Serialization.deserialize(io)
     close(io)
     stata
 end

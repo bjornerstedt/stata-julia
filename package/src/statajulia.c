@@ -102,29 +102,29 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if ( strlen(save) ) {
-		snprintf(buf, 80, "Saving data to file: %s\n", save) ;
-		SF_display(buf);
-		function = "serializeData";
-	}
-	if (function != NULL && strlen(function) == 0) {
-		SF_error("Either function or command has to be specified.\n");
-		return 211;
-	}
-
-	retval = process(module, function, stata, stata_data);
-	JL_GC_POP();
-	return retval;
-}
-
-int process(char *module, char *function, jl_value_t *stata,  jl_value_t *stata_data) {
-
 	int rc = 0;
 	if( (rc = variables(stata, stata_data, 0)) )  return rc ;
 	if( (rc = matrices(stata, stata_data, 0)) )  return rc ;
 	if( (rc = scalars(stata, stata_data, 0)) )  return rc ;
 	if( (rc = macros(stata, stata_data, 0)) )  return rc ;
 
+	if (strlen(save)) {
+		snprintf(buf, 80, "Saving data to file: %s\n", save) ;
+		SF_display(buf);
+		function = "serializeData";
+		module = "StataJulia";
+		call_julia(module, function, stata, jl_cstr_to_string(save) , NULL);
+		if(jl_exception_occurred()) {
+			SF_error("Could not save data in Julia\n");
+			return 23431;
+		}
+		return 0;
+	}
+
+	if (strlen(function) == 0) {
+		SF_error("Either function or command has to be specified.\n");
+		return 211;
+	}
 	call_julia(module, function, stata, NULL, NULL);
 	if(jl_exception_occurred()) {
 		char buf[80] ;
@@ -132,10 +132,13 @@ int process(char *module, char *function, jl_value_t *stata,  jl_value_t *stata_
 		SF_error(buf);
 		return 2341;
 	}
+
 	if( (rc = variables(stata, stata_data, 1)) )  return rc ;
 	if( (rc = matrices(stata, stata_data, 1)) )  return rc ;
 	if( (rc = scalars(stata, stata_data, 1)) )  return rc ;
 	if( (rc = macros(stata, stata_data, 1)) )  return rc ;
+
+	JL_GC_POP();
 	return 0;
 }
 
