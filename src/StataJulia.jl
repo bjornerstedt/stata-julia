@@ -16,6 +16,10 @@ function getInstance()
     return StataData()
 end
 
+function getInit()
+    return Dict()
+end
+
 function isvalidfunction(x)
     try
         isa(x, Function) ? 1 : 0
@@ -84,7 +88,7 @@ function getMacro(stata::StataData, x::String)
     stata.global_macro[x]
 end
 
-function addJuliaInitString(stata_init::Dict, x, y)
+function addJuliaInitString(stata_init::Dict, x::String, y::String)
     stata_init[x] = y
 end
 

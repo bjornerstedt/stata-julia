@@ -60,12 +60,28 @@ int main(int argc, char *argv[]) {
 	// 	return 999;
 	// }
 
+	if (strlen(command)) {
+		return execute_command(command);
+	}
+
 	// function without parameters is to set data
-	stata_data = call_julia(module, function , NULL, NULL, NULL);
-	if (stata_data == NULL || jl_exception_occurred()) {
-		snprintf(buf, 80, "Calling function %s in %s failed: %s\n", function, module, jl_typeof_str(jl_exception_occurred())) ;
-		SF_error(buf);
-		return 1019;
+	if (strlen(function)) {
+		stata_data = call_julia(module, function , NULL, NULL, NULL);
+		if (stata_data == NULL || jl_exception_occurred()) {
+			snprintf(buf, 80, "WARNING: Initialising function %s() in %s not found\n", function, module) ;
+			SF_error(buf);
+			stata_data = jl_eval_string("StataJulia.getInit()");
+			if (stata_data == NULL || jl_exception_occurred()) {
+				SF_error("HOW?");
+				return 1234;
+			}
+		}
+	} else {
+		stata_data = jl_eval_string("StataJulia.getInit()");
+		if (stata_data == NULL || jl_exception_occurred()) {
+			SF_error("ugh");
+			return 1234;
+		}
 	}
 	JL_GC_PUSH2(&stata_data, &stata);
 
@@ -90,9 +106,6 @@ int main(int argc, char *argv[]) {
 		snprintf(buf, 80, "Saving data to file: %s\n", save) ;
 		SF_display(buf);
 		function = "serializeData";
-	}
-	if (strlen(command)) {
-		return execute_command(command);
 	}
 	if (function != NULL && strlen(function) == 0) {
 		SF_error("Either function or command has to be specified.\n");

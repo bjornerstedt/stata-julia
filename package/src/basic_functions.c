@@ -23,12 +23,14 @@ char* getNameFromList(jl_value_t *stata_data, char* namelist, int update, int in
 }
 
 int julia_set_varlist(jl_value_t *stata_data, char* name, char* varlist) {
-	if (varlist == NULL ||  !strlen(varlist)) {
+	if (varlist == NULL ||  !strlen(varlist) ) {
 		return 1;
 	}
 	call_julia("StataJulia", "addJuliaInitString", stata_data, jl_cstr_to_string(name), jl_cstr_to_string(varlist));
 	if (jl_exception_occurred()) {
-		SF_error("Setting init list in Julia failed\n");
+		char buf[80];
+		snprintf(buf, 80,"Setting stata_data in Julia failed: %s %s\n", name, varlist);
+		SF_error(buf);
 		return 3293;
 	}
 	return 0;
@@ -104,7 +106,7 @@ jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* 
 		rv = jl_call3(func, x, y, z);
 	}
 	if (jl_exception_occurred() || rv == NULL) {
-        snprintf(errbuf, 80, "call_julia: Error: %s\n", jl_typeof_str(jl_exception_occurred())) ;
+        snprintf(errbuf, 80, "call_julia: Error: %s %s\n", funcname, jl_typeof_str(jl_exception_occurred())) ;
 		SF_error(errbuf);
 		return NULL;
 	}
