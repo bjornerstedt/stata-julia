@@ -1,12 +1,13 @@
 #include "stplugin.h"
 #include <julia.h>
 #include <strings.h>
+#include <stdio.h>
 #include "statajulia.h"
 
 char* getNameFromList(jl_value_t *stata_data, char* namelist, int update, int index) {
 	char buf[80] ;
 	// Get function nameGetVar:
-	jl_function_t *func = jl_get_function(jl_eval_string("StataJulia"), "nameGetVar");
+	jl_function_t *func = jl_get_function((jl_module_t *)jl_eval_string("StataJulia"), "nameGetVar");
 	if (func == NULL || jl_exception_occurred()) {
 		SF_display("Could not find function nameGetVar.");
 		return "";
@@ -21,14 +22,11 @@ char* getNameFromList(jl_value_t *stata_data, char* namelist, int update, int in
 	return (char *)jl_string_ptr(ret);
 }
 
-int julia_set_varlist(char* name, char* varlist) {
-	if (varlist == NULL || !strlen(varlist)) {
+int julia_set_varlist(jl_value_t *stata_data, char* name, char* varlist) {
+	if (varlist == NULL ||  !strlen(varlist)) {
 		return 1;
 	}
-	char command[200];
-	snprintf(command, 80, "StataJulia.addJuliaInitString(\"%s\", \"%s\")", name, varlist);
-	printf("%s\n", command );
-	int ret = jl_eval_string(command);
+	call_julia("StataJulia", "addJuliaInitString", stata_data, jl_cstr_to_string(name), jl_cstr_to_string(varlist));
 	if (jl_exception_occurred()) {
 		SF_error("Setting init list in Julia failed\n");
 		return 3293;
@@ -80,14 +78,14 @@ jl_array_t* create_2D(int rows, int cols) {
 }
 
 jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* y, jl_value_t* z) {
-    jl_value_t *my_module;
+    jl_module_t *my_module;
     jl_function_t *func;
     char errbuf[80] ;
     if (module == NULL) {
         func = jl_get_function(jl_current_module, funcname);
     } else {
 		// TODO: test module and func
-        my_module = jl_eval_string(module);
+        my_module = (jl_module_t *)jl_eval_string(module);
         func = jl_get_function(my_module, funcname);
     }
 	if (jl_exception_occurred() || func == NULL) {

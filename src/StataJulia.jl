@@ -83,8 +83,7 @@ function getMacro(stata::StataData, x::String)
     stata.global_macro[x]
 end
 
-function addJuliaInitString(x, y)
-    print("Init string $x and $y\n")
+function addJuliaInitString(stata_init::Dict, x, y)
     stata_init[x] = y
 end
 

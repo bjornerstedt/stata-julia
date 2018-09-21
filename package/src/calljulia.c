@@ -1,6 +1,7 @@
 #include "stplugin.h"
 #include <julia.h>
 #include <strings.h>
+#include <stdio.h>
 #include "statajulia.h"
 
 
@@ -14,7 +15,7 @@ int variables(jl_value_t *stata, jl_value_t *stata_data, int update) {
     while( strlen(name) ) {
 		if (update) {
 			// Check whether variable should be updated
-			jl_array_t *x = call_julia("StataJulia", "isSetVar", stata_data, jl_cstr_to_string(name), NULL );
+			jl_value_t *x = call_julia("StataJulia", "isSetVar", stata_data, jl_cstr_to_string(name), NULL );
 			if( jl_exception_occurred() || x == NULL ) {
 				char buf[80];
 				snprintf(buf, 80, "ERROR: %s\n", jl_typeof_str(jl_exception_occurred()));
@@ -66,7 +67,7 @@ int macros(jl_value_t *stata, jl_value_t *stata_data, int update) {
 	char* name = getNameFromList(stata_data, "macros", update, i++);
     while( strlen(name) ) {
 		if (update) {
-			char *content;
+			const char *content;
 			jl_value_t* x = call_julia("StataJulia", "getMacro", stata, jl_cstr_to_string(name), NULL );
 			if ( x == NULL  || jl_exception_occurred()) {
 				snprintf(buf, 80, "Getting macro from Julia failed: %s\n", name);
@@ -138,7 +139,6 @@ int scalars(jl_value_t *stata, jl_value_t *stata_data, int update) {
     return 0;
 }
 
-
 // ---------------- Get individual values --------------------
 
 // Get Stata global array by name
@@ -203,9 +203,6 @@ int matrix(jl_value_t *stata, char* name, int update) {
 	return 0;
 }
 
-// //////////////////////////////////////////////////////////////////
-
-
 int create_selection(jl_value_t *stata) {
 	// Create variable touse
 	ST_int i;
@@ -220,8 +217,8 @@ int create_selection(jl_value_t *stata) {
 	for( i = SF_in1() - 1; i < SF_in2(); i++) {
 		xData[i] = (SF_ifobs(i + 1))?1.0:0.0;
 	}
-
-	if( call_julia("StataJulia", "addVariable", stata, jl_cstr_to_string("touse") , x ) == NULL ) {
+	call_julia("StataJulia", "addVariable", stata, jl_cstr_to_string("touse") , (jl_value_t *)x );
+	if(jl_exception_occurred() ) {
 		SF_error("Could not add Julia var touse\n");
 		return 322;
 	}
@@ -258,7 +255,7 @@ int get_variable(jl_value_t *stata, char* name, int var_index) {
 		}
 		xData[i] = z; // Setting column vector
 	}
-	if( call_julia("StataJulia", "addVariable", stata, jl_cstr_to_string(name) , x ) == NULL ) {
+	if( call_julia("StataJulia", "addVariable", stata, jl_cstr_to_string(name) , (jl_value_t*)x ) == NULL ) {
 		SF_error("Could not add Julia var\n");
 		return 322;
 	}
@@ -273,12 +270,11 @@ int set_variable(jl_value_t *stata, char* name, int var_index) {
 	ST_retcode rc ;
 	ST_double z;
 
-	jl_array_t *x = call_julia("StataJulia", "getVariable", stata, jl_cstr_to_string(name), NULL );
+	jl_array_t *x = (jl_array_t*)call_julia("StataJulia", "getVariable", stata, jl_cstr_to_string(name), NULL );
 	if(jl_exception_occurred() || x == NULL ) {
 		SF_error("Could not get Julia var\n");
 		return 3241;
 	}
-
 	if (rows == 0) {
 		snprintf(errbuf, 80, "Could not get Stata variable for setting: %s\n", name) ;
 		SF_display(errbuf);

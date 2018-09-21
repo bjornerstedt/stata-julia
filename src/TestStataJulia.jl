@@ -13,7 +13,9 @@ function test_repeated(stata::StataData)
 end
 
 test_rw() = Dict(
-    "get_variables"  => "n var1 var2",
+    # Varlist obtained from Stata
+    # TODO: allow specification also in Julia
+    # "get_variables"  => "n var1 var2",
     "set_variables" => "var2",
     "set_matrices" => "matfromvar",
     "get_scalars" => "scalar1",
