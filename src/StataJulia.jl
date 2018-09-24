@@ -1,6 +1,6 @@
 module StataJulia
 
-using Serialization
+using Serialization, DataFrames
 
 struct StataData
     global_macro::Dict
@@ -49,7 +49,7 @@ end
 
 function serializeData(stata::StataData, filename::String)
     io = open(filename, "w")
-    Serialization.serialize(io, stata.matrix)
+    Serialization.serialize(io, stata)
     close(io)
 end
 

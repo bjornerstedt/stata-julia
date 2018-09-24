@@ -1,0 +1,6 @@
+authors = ["Jonas Björnerstedt <jonas@bjornerstedt.org>"]
+name = "StataJulia"
+uuid = "3b6ba8ca-c020-11e8-0357-d3a8a47ae63e"
+version = "0.1.0"
+
+[deps]
