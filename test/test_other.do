@@ -30,4 +30,4 @@ matlist matfromvar
 assertcount var1[1] == matfromvar[1,1]
 
 * Save file
-julia * ,  save("test_serial.bin") mat(A B) mac(global1) scal(scalar1) 
+julia * ,  save("test_serial.bin") mat(A B) mac(global1) scal(scalar1)

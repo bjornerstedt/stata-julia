@@ -28,10 +28,10 @@ function test_rw(stata::StataData)
     x = stata.global_macro["global1"]
     stata.global_macro["global2"] =  "Modified $x"
     stata.scalar["scalar2"] = 2*stata.scalar["scalar1"]
-    x = 3 .* stata.variable["n"]
-    stata.variable["var2"] = copy(x)
-    x = stata.variable["var1"] .* stata.variable["touse"]
-    stata.matrix["matfromvar"] = copy(x)
+    x = 3 .* stata.data[:n]
+    stata.data[:var2] = copy(x)
+    x = stata.data[:var1] .* stata.data[:touse]
+    stata.matrix["matfromvar"] = copy(x[:,:])
 end
 
 # Test the same function, but providing init vars in Stata

@@ -65,6 +65,21 @@ int get_julia_string(char *varname, char** str) {
 }
 
 // Create 2D array of float64 type
+jl_array_t* create_1D(int rows) {
+    jl_value_t *array_type = jl_apply_array_type((jl_value_t*)jl_float64_type, 1);
+	if (jl_exception_occurred() || array_type == NULL) {
+		SF_error("Could not allocate memory 1.\n");
+		return NULL;
+	}
+	jl_array_t *x  = jl_alloc_array_1d(array_type, rows);
+	if (jl_exception_occurred() || x == NULL) {
+		SF_error("Could not allocate memory.\n");
+		return NULL;
+	}
+	return x;
+}
+
+// Create 2D array of float64 type
 jl_array_t* create_2D(int rows, int cols) {
     jl_value_t *array_type = jl_apply_array_type((jl_value_t*)jl_float64_type, 2);
 	if (jl_exception_occurred() || array_type == NULL) {
@@ -108,7 +123,31 @@ jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* 
 	if (jl_exception_occurred() || rv == NULL) {
         snprintf(errbuf, 80, "call_julia: Error: %s %s\n", funcname, jl_typeof_str(jl_exception_occurred())) ;
 		SF_error(errbuf);
+		// none of these allocate, so a gc-root (JL_GC_PUSH) is not necessary
+        jl_call2(jl_get_function(jl_base_module, "showerror"),
+                 jl_stderr_obj(),
+                 jl_exception_occurred());
+        jl_printf(jl_stderr_stream(), "\n");
+        // jl_atexit_hook(1);
+        // exit(1);
 		return NULL;
 	}
 	return rv;
+}
+
+// From: https://github.com/JuliaLang/julia/blob/master/test/embedding/embedding.c
+jl_value_t *checked_eval_string(const char* code)
+{
+    jl_value_t *result = jl_eval_string(code);
+    if (jl_exception_occurred()) {
+        // none of these allocate, so a gc-root (JL_GC_PUSH) is not necessary
+        jl_call2(jl_get_function(jl_base_module, "showerror"),
+                 jl_stderr_obj(),
+                 jl_exception_occurred());
+        jl_printf(jl_stderr_stream(), "\n");
+        jl_atexit_hook(1);
+        exit(1);
+    }
+    assert(result && "Missing return value but no exception occurred!");
+    return result;
 }

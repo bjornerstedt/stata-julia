@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
 	jl_value_t *stata;
 	jl_value_t *stata_data;
-	jl_eval_string("using StataJulia");
+	checked_eval_string("using StataJulia");
 	if(jl_exception_occurred()) {
 		snprintf(buf, 80, "Could not find the StataJulia package,  %s\n", jl_typeof_str(jl_exception_occurred())) ;
 		SF_error(buf);
@@ -38,14 +38,14 @@ int main(int argc, char *argv[]) {
 	}
 	if (strlen(module)) {
 		snprintf(buf, 80, "using %s", module) ;
-		jl_eval_string(buf);
+		checked_eval_string(buf);
 		if (jl_exception_occurred()) {
 			snprintf(buf, 80, "using %s failed, error: %s.\n", module, jl_typeof_str(jl_exception_occurred())) ;
 			SF_error(buf);
 			return 101;
 		}
 	}
-	stata = jl_eval_string("StataJulia.getInstance()");
+	stata = checked_eval_string("StataJulia.getInstance()");
 	if(stata == NULL || jl_exception_occurred()) {
 		char buf[80] ;
 		snprintf(buf, 80, "StataJulia.getInstance() failed:  %s\n" ,jl_typeof_str(jl_exception_occurred()));
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 	// TODO: Fix checking
 	// snprintf(buf, 80, "StataJulia.isvalidfunction(%s.%s)", module, function );
 	// SF_error(buf );
-	// if (!jl_unbox_int32(jl_eval_string(buf)) ) {
+	// if (!jl_unbox_int32(checked_eval_string(buf)) ) {
 	// 	snprintf(buf, 80, "Could not find function %s in module %s\n" , function, module);
 	// 	SF_error(buf);
 	// 	return 999;
@@ -70,14 +70,14 @@ int main(int argc, char *argv[]) {
 		if (stata_data == NULL || jl_exception_occurred()) {
 			snprintf(buf, 80, "WARNING: Initialising function %s() in %s not found\n", function, module) ;
 			SF_error(buf);
-			stata_data = jl_eval_string("StataJulia.getInit()");
+			stata_data = checked_eval_string("StataJulia.getInit()");
 			if (stata_data == NULL || jl_exception_occurred()) {
 				SF_error("HOW?");
 				return 1234;
 			}
 		}
 	} else {
-		stata_data = jl_eval_string("StataJulia.getInit()");
+		stata_data = checked_eval_string("StataJulia.getInit()");
 		if (stata_data == NULL || jl_exception_occurred()) {
 			SF_error("ugh");
 			return 1234;
@@ -152,7 +152,7 @@ int execute_command(char *command) {
 	}
 
 	// Evaluate command:
-	jl_value_t *ret = jl_eval_string(command);
+	jl_value_t *ret = checked_eval_string(command);
 	if (jl_exception_occurred()) {
 		SF_error("Could not understand Julia command\n");
 		return 1534;

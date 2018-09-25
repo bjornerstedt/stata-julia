@@ -1,16 +1,17 @@
 module StataJulia
 
-using Serialization, DataFrames
+using Serialization
+using DataFrames
 
 struct StataData
     global_macro::Dict
     scalar::Dict
     matrix::Dict
-    variable::Dict
+    data::DataFrame
     # stata_init::Dict
 end
 
-StataData() = StataData(Dict(), Dict(), Dict(), Dict() )
+StataData() = StataData(Dict(), Dict(), Dict(), DataFrame() )
 
 export StataData
 
@@ -31,11 +32,11 @@ function isvalidfunction(x)
 end
 
 function addVariable(stata::StataData, x::String, y)
-    stata.variable[x] = y
+    stata.data[Symbol(x)] = y
 end
 
 function getVariable(stata::StataData, x::String)
-    stata.variable[x]
+    stata.data[Symbol(x)]
 end
 
 function isSetVar(stata_init::Dict, str::String)

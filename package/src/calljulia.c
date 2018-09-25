@@ -208,7 +208,7 @@ int create_selection(jl_value_t *stata) {
 	ST_int i;
 	ST_retcode rc ;
 	jl_array_t *x;
-	if( (x = create_2D(SF_in2(), 1)) == NULL ) return 6544;
+	if( (x = create_1D(SF_in2())) == NULL ) return 6544;
 	// TODO: Should it be a 1d array?
     double *xData = (double*)jl_array_data(x);
 	for( i = 0; i < SF_in1() - 1; i++) {
@@ -231,17 +231,16 @@ int get_variable(jl_value_t *stata, char* name, int var_index) {
 	ST_int i, j, rows;
 	ST_retcode rc ;
 	rows = SF_in2() ;
+	char errbuf[80] ;
 
 	if (rows == 0) {
-		char errbuf[80] ;
 	    snprintf(errbuf, 80, "Could not get Stata dataset column: %s\n", name) ;
 	    SF_display(errbuf);
 		return 654;
 	}
 
 	jl_array_t *x;
-	if( (x = create_2D(rows, 1)) == NULL ) {
-		SF_error("Could not allocate memory\n");
+	if( (x = create_1D(rows)) == NULL ) {
 		return 755;
 	}
 	// TODO: Should it be a 1d array?
@@ -256,7 +255,8 @@ int get_variable(jl_value_t *stata, char* name, int var_index) {
 		xData[i] = z; // Setting column vector
 	}
 	if( call_julia("StataJulia", "addVariable", stata, jl_cstr_to_string(name) , (jl_value_t*)x ) == NULL ) {
-		SF_error("Could not add Julia var\n");
+		snprintf(errbuf, 80, "Could not add Julia var: %s\n", name) ;
+	    SF_display(errbuf);
 		return 322;
 	}
 	return 0;
@@ -283,9 +283,8 @@ int set_variable(jl_value_t *stata, char* name, int var_index) {
 	// Get number of dimensions
 	int ndims = jl_array_ndims(x);
 	size_t rowsj = jl_array_dim(x, 0);
-	size_t colsj = jl_array_dim(x, 1);
-	if (rowsj != rows || colsj != 1) {
-		snprintf(errbuf, 80, "ERROR: variable dimensions for do not match for: %s", name);
+	if (rows != rowsj) {
+		snprintf(errbuf, 80, "ERROR: variable dimensions for do not match for: %s\n", name);
 		SF_display(errbuf);
 		return 99;
 	}
