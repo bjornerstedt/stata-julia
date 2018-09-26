@@ -37,13 +37,15 @@ int main(int argc, char *argv[]) {
 		return 1019;
 	}
 	if (strlen(module)) {
-		snprintf(buf, 80, "using %s", module) ;
+		snprintf(buf, 80, "Base.MainInclude.include(\"%s.jl\")", module) ;
 		checked_eval_string(buf);
-		if (jl_exception_occurred()) {
-			snprintf(buf, 80, "using %s failed, error: %s.\n", module, jl_typeof_str(jl_exception_occurred())) ;
-			SF_error(buf);
-			return 101;
-		}
+		// snprintf(buf, 80, "using %s", module) ;
+		// checked_eval_string(buf);
+		// if (jl_exception_occurred()) {
+		// 	snprintf(buf, 80, "using %s failed, error: %s.\n", module, jl_typeof_str(jl_exception_occurred())) ;
+		// 	SF_error(buf);
+		// 	return 101;
+		// }
 	}
 	stata = checked_eval_string("StataJulia.getInstance()");
 	if(stata == NULL || jl_exception_occurred()) {

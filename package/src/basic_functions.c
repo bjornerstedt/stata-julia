@@ -139,15 +139,13 @@ jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* 
 jl_value_t *checked_eval_string(const char* code)
 {
     jl_value_t *result = jl_eval_string(code);
-    if (jl_exception_occurred()) {
+    if (jl_exception_occurred() || !result) {
         // none of these allocate, so a gc-root (JL_GC_PUSH) is not necessary
         jl_call2(jl_get_function(jl_base_module, "showerror"),
                  jl_stderr_obj(),
                  jl_exception_occurred());
         jl_printf(jl_stderr_stream(), "\n");
-        jl_atexit_hook(1);
-        exit(1);
+		return NULL;
     }
-    assert(result && "Missing return value but no exception occurred!");
     return result;
 }
