@@ -13,18 +13,17 @@ struct StataData
 end
 
 StataData() = StataData(Dict(), Dict(), Dict(),
-DataFrame(), Dict())
-
+DataFrame(), Dict(
+    "variables" => Set(""),
+    "matrices" => Set(""),
+    "scalars" => Set(""),
+    "global_macros" => Set("")
+) )
 
 export StataData, putstata
 
 function getInstance()
-    st = StataData()
-    st.putvars["variables"] = Set("")
-    st.putvars["matrices"] = Set("")
-    st.putvars["scalars"] = Set("")
-    st.putvars["global_macros"] = Set("")
-    return st
+    return StataData()
 end
 
 function getInit()

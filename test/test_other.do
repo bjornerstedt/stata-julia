@@ -6,9 +6,6 @@
 
 run initvars.do
 
-
-julia , command(sin(2))
-
 * Provide variables in Stata instead of Julia
 julia * , module(TestStataJulia) func(test_rw_stata) mat(A B) setmat(matfromvar) mac(global1) setmac(global2) scal(scalar1) setscal(scalar2) setvar(var2)
 

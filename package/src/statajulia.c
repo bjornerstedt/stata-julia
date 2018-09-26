@@ -39,14 +39,21 @@ int main(int argc, char *argv[]) {
 	if (strlen(module)) {
 		snprintf(buf, 80, "Base.MainInclude.include(\"%s.jl\")", module) ;
 		checked_eval_string(buf);
-		// snprintf(buf, 80, "using %s", module) ;
-		// checked_eval_string(buf);
-		// if (jl_exception_occurred()) {
-		// 	snprintf(buf, 80, "using %s failed, error: %s.\n", module, jl_typeof_str(jl_exception_occurred())) ;
-		// 	SF_error(buf);
-		// 	return 101;
-		// }
 	}
+	// TODO: Check whether module is in path, then:
+	// if (strlen(module)) {
+	// 	snprintf(buf, 80, "using %s", module) ;
+	// 	checked_eval_string(buf);
+	// 	if(jl_exception_occurred()) {
+	// 		snprintf(buf, 80, "Base.MainInclude.include(\"%s.jl\")", module) ;
+	// 		checked_eval_string(buf);
+	// 		if(jl_exception_occurred()) {
+	// 			snprintf(buf, 80, "Could not find %s module\n", module) ;
+	// 			return 22;
+	// 		}
+	// 	}
+	// }
+
 	stata = checked_eval_string("StataJulia.getInstance()");
 	if(stata == NULL || jl_exception_occurred()) {
 		char buf[80] ;
@@ -147,34 +154,39 @@ int main(int argc, char *argv[]) {
 // Execute single Julia command, returning the result in a Stata macro
 // NOTE that it does not handla return values well, and does not use init values.
 int execute_command(char *command) {
-	char buf[80];
+	char buf[200];
 	if (strlen(command) == 0) {
 		SF_error("Either using och command options have to be set");
 		return 1456;
 	}
 
 	// Evaluate command:
-	jl_value_t *ret = checked_eval_string(command);
-	if (jl_exception_occurred()) {
-		SF_error("Could not understand Julia command\n");
+	snprintf(buf, 80, "StataJulia.execute_command(\"%s\")" , command) ;
+	jl_value_t *ret = checked_eval_string(buf);
+	if (jl_exception_occurred() || ret == NULL) {
+		SF_error("Could not execute Julia command\n");
 		return 1534;
 	}
-	if (jl_typeis(ret, jl_float64_type)) {
-			double ret_unboxed = jl_unbox_float64(ret);
-			snprintf(buf, 80, "Result: %f\n", ret_unboxed) ;
-			SF_display(buf);
-			// TODO: Fix return values as global
-			// SF_scal_save("r(command)", ret_unboxed);
-			// SF_scal_save("command", ret_unboxed);
-			return 0;
-	} else {
-		int ret_unboxed = jl_unbox_int64(ret);
-		if (jl_exception_occurred()) {
-			SF_error("Only expressions returning a float or double are allowed.\n");
-			return 1;
-		}
-		snprintf(buf, 80, "Result: %d\n", ret_unboxed) ;
-		SF_display(buf);
-		return 0;
-	}
+	const char *result = jl_string_ptr(ret);
+	snprintf(buf, 200, "Result: %s\n", result) ;
+	SF_display(buf);
+	return 0;
+	// if (jl_typeis(ret, jl_float64_type)) {
+	// 		double ret_unboxed = jl_unbox_float64(ret);
+	// 		snprintf(buf, 80, "Result: %f\n", ret_unboxed) ;
+	// 		SF_display(buf);
+	// 		// TODO: Fix return values as global
+	// 		// SF_scal_save("r(command)", ret_unboxed);
+	// 		// SF_scal_save("command", ret_unboxed);
+	// 		return 0;
+	// } else {
+	// 	int ret_unboxed = jl_unbox_int64(ret);
+	// 	if (jl_exception_occurred()) {
+	// 		SF_error("Only expressions returning a float or double are allowed.\n");
+	// 		return 1;
+	// 	}
+	// 	snprintf(buf, 80, "Result: %d\n", ret_unboxed) ;
+	// 	SF_display(buf);
+	// 	return 0;
+	// }
 }
