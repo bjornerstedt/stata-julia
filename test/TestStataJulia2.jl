@@ -1,4 +1,4 @@
-module TestStataJulia
+module TestStataJulia2
 
 using StataJulia
 
@@ -11,17 +11,6 @@ function test_repeated(stata::StataData)
     B = transpose(stata.matrix["A"])
     stata.matrix["B"] = copy(B)
 end
-
-init() = Dict(
-    # Varlist obtained from Stata
-    # TODO: allow specification also in Julia
-    # "set_variables" => "var2",
-    # "set_matrices" => "matfromvar",
-    "get_scalars" => "scalar1",
-    "set_scalars" => "scalar2",
-    "get_macros" => "global1",
-    "set_macros" => "global2"
-)
 
 function test_rw(stata::StataData)
     x = stata.global_macro["global1"]

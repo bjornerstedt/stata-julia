@@ -19,14 +19,15 @@ int main(int argc, char *argv[]) {
 	int retval = 0;
 	char buf[80] ;
 
-	if (argc < 2) {
+	if (argc < 3) {
 		SF_error("Internal error. The ADO file has sent the wrong number of pars");
 		return 1;
 	}
 	char* function = argv[0];
 	char* module = (argc >= 1)?argv[1]:"";
-	char* command = (2 < argc)?argv[2]:"";
-	char* save = (3 < argc)?argv[3]:"";
+	char* varlist = (2 < argc)?argv[2]:"";
+	char* command = (3 < argc)?argv[3]:"";
+	char* save = (4 < argc)?argv[4]:"";
 
 	jl_value_t *stata;
 	jl_value_t *stata_data;
@@ -39,6 +40,11 @@ int main(int argc, char *argv[]) {
 	if (strlen(module)) {
 		snprintf(buf, 80, "Base.MainInclude.include(\"%s.jl\")", module) ;
 		checked_eval_string(buf);
+		if(jl_exception_occurred()) {
+			snprintf(buf, 80, "Could not include file: \"%s.jl\"\n", module) ;
+			SF_error(buf);
+			return 3331;
+		}
 	}
 	// TODO: Check whether module is in path, then:
 	// if (strlen(module)) {
@@ -75,29 +81,30 @@ int main(int argc, char *argv[]) {
 
 	// function without parameters is to set data
 	if (strlen(function)) {
-		stata_data = call_julia(module, function , NULL, NULL, NULL);
+		stata_data = call_julia(module, "init" , NULL, NULL, NULL);
 		if (stata_data == NULL || jl_exception_occurred()) {
-			snprintf(buf, 80, "WARNING: Initialising function %s() in %s not found\n", function, module) ;
-			SF_error(buf);
+			// snprintf(buf, 80, "WARNING: Initialising function %s() in %s not found\n", function, module) ;
+			// SF_error(buf);
 			stata_data = checked_eval_string("StataJulia.getInit()");
 			if (stata_data == NULL || jl_exception_occurred()) {
-				SF_error("HOW?");
+				SF_error("Could not find getInit\n");
 				return 1234;
 			}
 		}
 	} else {
 		stata_data = checked_eval_string("StataJulia.getInit()");
 		if (stata_data == NULL || jl_exception_occurred()) {
-			SF_error("ugh");
-			return 1234;
+			SF_error("Could not find getInit\n");
+			return 1235;
 		}
 	}
 	JL_GC_PUSH2(&stata_data, &stata);
 
+	if (strlen(varlist)) {
+		julia_set_varlist(stata_data, "get_variables", varlist);
+	}
 	static char* listnames[10];
 	int i = 0;
-	listnames[i++] = "savefile";
-	listnames[i++] = "get_variables";
 	listnames[i++] = "set_variables";
 	listnames[i++] = "get_matrices";
 	listnames[i++] = "set_matrices";
@@ -105,10 +112,17 @@ int main(int argc, char *argv[]) {
 	listnames[i++] = "set_scalars";
 	listnames[i++] = "get_macros";
 	listnames[i++] = "set_macros";
-	for ( i = 3; i < argc; i++) {
+	for ( i = 5; i < argc; i++) {
 		if (strlen(argv[i])) {
-			julia_set_varlist(stata_data, listnames[i - 3], argv[i]);
+			julia_set_varlist(stata_data, listnames[i - 5], argv[i]);
 		}
+	}
+
+	// Copy init vars from stata_data to stata
+	call_julia("StataJulia", "copyInitVars" , stata, stata_data, NULL);
+	if (jl_exception_occurred()) {
+		SF_error("Could not run StataJulia.copyInitVars()\n");
+		return 1235;
 	}
 
 	int rc = 0;

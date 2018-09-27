@@ -11,11 +11,11 @@ int variables(jl_value_t *stata, jl_value_t *stata_data, int update) {
 	}
 	int i = 1;
 	// Loop through all variables
-	char* name = getNameFromList(stata_data, "variables", 0, i);
+	char* name = getNameFromList(stata, "variables", 0, i);
     while( strlen(name) ) {
 		if (update) {
 			// Check whether variable should be updated
-			jl_value_t *x = call_julia("StataJulia", "isSetVar", stata_data, jl_cstr_to_string(name), NULL );
+			jl_value_t *x = call_julia("StataJulia", "isSetVar", stata, jl_cstr_to_string("variables"), jl_cstr_to_string(name) );
 			if( jl_exception_occurred() || x == NULL ) {
 				char buf[80];
 				snprintf(buf, 80, "ERROR: %s\n", jl_typeof_str(jl_exception_occurred()));
@@ -39,7 +39,7 @@ int variables(jl_value_t *stata, jl_value_t *stata_data, int update) {
 				return ret;
 			}
 		}
-		name = getNameFromList(stata_data, "variables", 0, ++i);
+		name = getNameFromList(stata, "variables", 0, ++i);
     }
     return 0;
 }
@@ -47,11 +47,11 @@ int variables(jl_value_t *stata, jl_value_t *stata_data, int update) {
 int matrices(jl_value_t *stata, jl_value_t *stata_data, int update) {
 	int i = 1;
 	int rv;
-	char* name = getNameFromList(stata_data, "matrices", update, i++);
+	char* name = getNameFromList(stata, "matrices", update, i++);
     while( strlen(name) ) {
 		if((rv = matrix(stata, name, update)) )
 			return rv;
-		name = getNameFromList(stata_data, "matrices", update, i++);
+		name = getNameFromList(stata, "matrices", update, i++);
     }
     return 0;
 }
@@ -64,7 +64,7 @@ int macros(jl_value_t *stata, jl_value_t *stata_data, int update) {
 	int rc = 0;
 	char command[80];
 	int i = 1;
-	char* name = getNameFromList(stata_data, "macros", update, i++);
+	char* name = getNameFromList(stata, "macros", update, i++);
     while( strlen(name) ) {
 		if (update) {
 			const char *content;
@@ -94,7 +94,7 @@ int macros(jl_value_t *stata, jl_value_t *stata_data, int update) {
 				return 3296;
 			}
 		}
-		name = getNameFromList(stata_data, "macros", update, i++);
+		name = getNameFromList(stata, "macros", update, i++);
     }
     return 0;
 }
@@ -107,7 +107,7 @@ int scalars(jl_value_t *stata, jl_value_t *stata_data, int update) {
 	ST_double d;
 	// Variable not required to be defined
 	int i = 1;
-	char* name = getNameFromList(stata_data, "scalars", update, i++);
+	char* name = getNameFromList(stata, "scalars", update, i++);
     while( strlen(name) ) {
 		if (update) {
 			jl_value_t *x;
@@ -134,7 +134,7 @@ int scalars(jl_value_t *stata, jl_value_t *stata_data, int update) {
 				return 3216;
 			}
 		}
-		name = getNameFromList(stata_data, "scalars", update, i++);
+		name = getNameFromList(stata, "scalars", update, i++);
     }
     return 0;
 }
@@ -219,8 +219,8 @@ int create_selection(jl_value_t *stata) {
 	}
 	call_julia("StataJulia", "addVariable", stata, jl_cstr_to_string("touse") , (jl_value_t *)x );
 	if(jl_exception_occurred() ) {
-		SF_error("Could not add Julia var touse\n");
-		return 322;
+		SF_error("Could not add Julia var: touse\n");
+		return 327;
 	}
 	return 0;
 }

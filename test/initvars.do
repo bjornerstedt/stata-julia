@@ -2,8 +2,7 @@
 
 version 13
 clear all
-program statajulia, plugin
-
+program statajulia, plugin using(statajulia.plugin)
 * Generate example dataset:
 set obs 10
 gen n = _n

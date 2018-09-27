@@ -5,7 +5,8 @@
 
 run initvars.do
 
-plugin call statajulia n var1 var2, test_rw TestStataJulia
+* varnames have to be sent explicitly, as Stata plugin doesn't report them
+plugin call statajulia n var1 var2, test_rw TestStataJulia "n var1 var2"
 
 di "Global macro: global1: $global1"
 di "Global macro: global2: $global2"

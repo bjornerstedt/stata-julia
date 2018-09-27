@@ -8,27 +8,32 @@ struct StataData
     scalar::Dict
     matrix::Dict
     data::DataFrame
-    putvars::Dict{String, Set{String}}
+    getvars::Dict{String, Array{String}}
+    putvars::Dict{String, Array{String}}
     # stata_init::Dict
 end
 
 StataData() = StataData(Dict(), Dict(), Dict(),
-DataFrame(), Dict())
+DataFrame(), Dict(), Dict())
 
 
 export StataData, putstata
 
 function getInstance()
     st = StataData()
-    st.putvars["variables"] = Set("")
-    st.putvars["matrices"] = Set("")
-    st.putvars["scalars"] = Set("")
-    st.putvars["global_macros"] = Set("")
+    st.putvars["variables"] = []
+    st.putvars["matrices"] = []
+    st.putvars["scalars"] = []
+    st.putvars["global_macros"] = []
+    st.getvars["variables"] = []
+    st.getvars["matrices"] = []
+    st.getvars["scalars"] = []
+    st.getvars["global_macros"] = []
     return st
 end
 
 function getInit()
-    return Dict()
+    return Dict( )
 end
 
 function isvalidfunction(x)
@@ -45,25 +50,6 @@ end
 
 function getVariable(stata::StataData, x::String)
     stata.data[Symbol(x)]
-end
-
-function putstata(stata::StataData, x::String, y::String)
-    push!(stata.putvars[x], y)
-end
-
-function isSetVar(stata_init::Dict, str::String)
-    if !haskey(stata_init, "set_variables")
-        return 0
-    end
-    names = Set(split(strip(stata_init["set_variables"]), r" +"))
-    return (in(str, names)) ? 1 : 0;
-end
-
-function isSetVar2(stata::StataData, str::String)
-    # if !haskey(stata.putvars, "variables")
-    #     return 0
-    # end
-    return (in(str, stata.putvars["variables"])) ? 1 : 0;
 end
 
 function serializeData(stata::StataData, filename::String)
@@ -111,9 +97,53 @@ end
 
 function addJuliaInitString(stata_init::Dict, x::String, y::String)
     stata_init[x] = y
+
 end
 
-function nameGetVar(stata_init::Dict, varlist::String, n::Integer)
+function copyInitVars(stata::StataData, stata_init::Dict)
+    for (key, value) in stata_init
+        names = Array{String}(split(strip(value), r" +"))
+        listname = SubString(key, 5)
+        if SubString(key, 1, 3) == "set"
+            stata.putvars[listname] = names
+        else
+            stata.getvars[listname] = names
+        end
+    end
+end
+
+function putstata(stata::StataData, x::String, y::String)
+    push!(stata.putvars[x], y)
+end
+
+function isSetVar(stata::StataData, var::String, str::String)
+    if !haskey(stata.putvars, var)
+        return 0
+    end
+    return (in(str, stata.putvars[var])) ? 1 : 0;
+end
+
+function nameGetVar(stata::StataData, varlist::String, n::Integer)
+    if !haskey(stata.getvars, varlist)
+        return("")
+    end
+    if length(stata.getvars[varlist]) < n || n < 1
+        return("")
+    end
+    return String(stata.getvars[varlist][n])
+end
+
+function namePutVar(stata::StataData, varlist::String, n::Integer)
+    if !haskey(stata.putvars, varlist)
+        return("")
+    end
+    if length(stata.putvars[varlist]) < n || n < 1
+        return("")
+    end
+    return String(stata.putvars[varlist][n])
+end
+
+function nameGetVar2(stata_init::Dict, varlist::String, n::Integer)
     if !haskey(stata_init, varlist)
         return("")
     end
@@ -129,7 +159,7 @@ function execute_command(cmd)
     try
         a = string(eval(Meta.parse(cmd)))
     catch Error
-        a = "ERROR: Could not execute command"
+        a = "ERROR: Could not execute command: $cmd"
     end
     a
 end

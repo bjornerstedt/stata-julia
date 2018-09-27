@@ -37,8 +37,8 @@ if ("`all'" != "") {
     }
 }
 
-plugin call statajulia `varlist' `if' `in' , "`function'"  "`module'"  "`command'"  "`save'" ///
- "`varlist'" "`setvariables'" "`matrices'" "`setmatrices'" "`scalars'" "`setscalars'" ///
+plugin call statajulia `varlist' `if' `in' , "`function'"  "`module'" "`varlist'" "`command'"  "`save'" ///
+ "`setvariables'" "`matrices'" "`setmatrices'" "`scalars'" "`setscalars'" ///
  "`macros'" "`setmacros'"
 
  *program drop calljulia
@@ -46,4 +46,4 @@ plugin call statajulia `varlist' `if' `in' , "`function'"  "`module'"  "`command
 end
 
 * TODO: Load different plugin for each OS
-program statajulia, plugin
+program statajulia, plugin using(statajulia.plugin)

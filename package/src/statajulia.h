@@ -26,4 +26,5 @@ int displayPrintBuffer();
 int jexec(char *command);
 int julia_set_varlist(jl_value_t *stata_data, char* name, char* varlist);
 int create_selection(jl_value_t *stata);
-char* getNameFromList(jl_value_t *stata_data, char* namelist, int update, int index);
+char* getNameFromList2(jl_value_t *stata_data, char* namelist, int update, int index);
+char* getNameFromList(jl_value_t *stata, char* namelist, int update, int index);

@@ -4,10 +4,28 @@
 #include <stdio.h>
 #include "statajulia.h"
 
-char* getNameFromList(jl_value_t *stata_data, char* namelist, int update, int index) {
+char* getNameFromList(jl_value_t *stata, char* namelist, int update, int index) {
 	char buf[80] ;
 	// Get function nameGetVar:
-	jl_function_t *func = jl_get_function((jl_module_t *)jl_eval_string("StataJulia"), "nameGetVar");
+	char* funcname = update ? "namePutVar" : "nameGetVar";
+	jl_function_t *func = jl_get_function((jl_module_t *)jl_eval_string("StataJulia"), funcname);
+	if (func == NULL || jl_exception_occurred()) {
+		SF_display("Could not find function nameGetVar.");
+		return "";
+	}
+	jl_value_t *ret = jl_call3(func, stata, jl_cstr_to_string(namelist), jl_box_int32(index));
+	if(ret == NULL || jl_exception_occurred()) {
+		snprintf(buf, 80, "getNameFromList(): Could not get index: %s\n" ,jl_typeof_str(jl_exception_occurred()));
+		SF_error(buf);
+		return "";
+	}
+	return (char *)jl_string_ptr(ret);
+}
+
+char* getNameFromList2(jl_value_t *stata_data, char* namelist, int update, int index) {
+	char buf[80] ;
+	// Get function nameGetVar:
+	jl_function_t *func = jl_get_function((jl_module_t *)jl_eval_string("StataJulia"), "nameGetVar2");
 	if (func == NULL || jl_exception_occurred()) {
 		SF_display("Could not find function nameGetVar.");
 		return "";
@@ -22,7 +40,7 @@ char* getNameFromList(jl_value_t *stata_data, char* namelist, int update, int in
 	return (char *)jl_string_ptr(ret);
 }
 
-int julia_set_varlist(jl_value_t *stata_data, char* name, char* varlist) {
+int julia_set_varlist( jl_value_t *stata_data, char* name, char* varlist) {
 	if (varlist == NULL ||  !strlen(varlist) ) {
 		return 1;
 	}
