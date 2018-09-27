@@ -32,6 +32,9 @@ function test_rw(stata::StataData)
     x = stata.data[:var1] .* stata.data[:touse]
     stata.matrix["matfromvar"] = copy(x[:,:])
 
+    # Write to stata.buffer to get output printed in Stata
+    write(stata.buffer, "This is my print Output:\n")
+
     putstata(stata, "variables", "var2")
     putstata(stata, "global_macros", "global2")
     putstata(stata, "scalars", "scalar2")

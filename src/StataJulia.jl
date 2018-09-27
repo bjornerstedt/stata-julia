@@ -10,11 +10,12 @@ struct StataData
     data::DataFrame
     getvars::Dict{String, Array{String}}
     putvars::Dict{String, Array{String}}
-    # stata_init::Dict
+    buffer::IOBuffer
+
 end
 
 StataData() = StataData(Dict(), Dict(), Dict(),
-DataFrame(), Dict(), Dict())
+DataFrame(), Dict(), Dict(), IOBuffer())
 
 
 export StataData, putstata
@@ -67,8 +68,8 @@ function deserializeData(fn::String)
 end
 
 # To print output in Stata
-function getPrintBuffer()
-    String(printBuffer)
+function getPrintBuffer(stata::StataData)
+    String(take!(stata.buffer))
 end
 
 function addMatrix(stata::StataData, x::String, y)

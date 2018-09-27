@@ -161,6 +161,13 @@ int main(int argc, char *argv[]) {
 	if( (rc = scalars(stata, stata_data, 1)) )  return rc ;
 	if( (rc = macros(stata, stata_data, 1)) )  return rc ;
 
+	jl_value_t* ret = call_julia("StataJulia", "getPrintBuffer", stata, NULL, NULL);
+    if (ret == NULL || jl_exception_occurred()) {
+        SF_error("Failed getting the print Buffer from Julia\n");
+		return 311;
+	} else
+    	SF_display((char*)jl_string_ptr(ret));
+
 	JL_GC_POP();
 	return 0;
 }

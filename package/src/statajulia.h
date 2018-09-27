@@ -22,8 +22,6 @@ int get_julia_string(char *command, char** str);
 jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* y, jl_value_t* z);
 jl_array_t* create_1D(int rows);
 jl_array_t* create_2D(int rows, int cols);
-int displayPrintBuffer();
-int jexec(char *command);
 int julia_set_varlist(jl_value_t *stata_data, char* name, char* varlist);
 int create_selection(jl_value_t *stata);
 char* getNameFromList2(jl_value_t *stata_data, char* namelist, int update, int index);
