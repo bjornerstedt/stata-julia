@@ -2,3 +2,5 @@
 tmp*.*
 julia.ado
 *.bin
+StataExample.jl
+example.do

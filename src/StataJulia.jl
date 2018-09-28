@@ -25,11 +25,11 @@ function getInstance()
     st.putvars["variables"] = []
     st.putvars["matrices"] = []
     st.putvars["scalars"] = []
-    st.putvars["global_macros"] = []
+    st.putvars["macros"] = []
     st.getvars["variables"] = []
     st.getvars["matrices"] = []
     st.getvars["scalars"] = []
-    st.getvars["global_macros"] = []
+    st.getvars["macros"] = []
     return st
 end
 
@@ -113,8 +113,24 @@ function copyInitVars(stata::StataData, stata_init::Dict)
     end
 end
 
-function putstata(stata::StataData, x::String, y::String)
-    push!(stata.putvars[x], y)
+function putstata(stata::StataData, category::String, varname::String)
+    push!(stata.putvars[category], varname)
+end
+
+function putstata(stata::StataData, category::String, varname::String, value::Any)
+    push!(stata.putvars[category], varname)
+    if category == "scalars"
+        stata.scalar[varname] = Float64(value)
+    elseif category == "macros"
+        stata.global_macro[varname] = value
+        # TODO: String(value)
+    elseif category == "variables"
+        stata.data[Symbol(varname)] = copy(value) # TODO: Ensure that it is a vector
+    elseif category == "matrices"
+        stata.matrix[varname] = copy(value[:,:])
+    else
+        write(stata.buffer, "ERROR: Wrong type")
+    end
 end
 
 function isSetVar(stata::StataData, var::String, str::String)

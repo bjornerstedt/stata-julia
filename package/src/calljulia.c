@@ -151,7 +151,7 @@ int matrix(jl_value_t *stata, char* name, int update) {
 	cols = SF_col(name);
 
 	if (rows == 0) {
-	  	snprintf(errbuf, 80, "Could not get Stata matrix %s to write to\n", name) ;
+	  	snprintf(errbuf, 80, "Stata matrix %s is not defined\n", name) ;
 	  	SF_display(errbuf);
 		return 161;
 	}

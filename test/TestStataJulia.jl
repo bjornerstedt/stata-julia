@@ -36,7 +36,7 @@ function test_rw(stata::StataData)
     write(stata.buffer, "This is my print Output:\n")
 
     putstata(stata, "variables", "var2")
-    putstata(stata, "global_macros", "global2")
+    putstata(stata, "macros", "global2")
     putstata(stata, "scalars", "scalar2")
     putstata(stata, "matrices", "matfromvar")
 

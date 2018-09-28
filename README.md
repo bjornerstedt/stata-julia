@@ -7,21 +7,19 @@ Note that the __stata-julia__ interface is still work in progress. It currently 
 
 # Using stata-julia
 
-After installing Julia and setting the JULIA_HOME environment variable as described below, Julia commands can be run from Stata. To run, download the content of the `package` foler and run Stata in this. To invoke Julia from Stata, the `julia` program is used:
+After installing Julia and setting the JULIA_HOME environment variable as described below, Julia commands can be run from Stata. To run, download the content of the `package` folder and run Stata in this folder. To invoke Julia from Stata, the `julia` program is used:
 
 ```
 . julia , command(sin(2))
 Result: 0.909297
 ```
 
-To test the program, run `package/test.do` in Stata.
-
 ## Syntax
 
 The Stata syntax is
 
 ```
-julia [varlist] [if] [in] , [function(string)] [module(string)] [command(string)] [save(string)]
+julia [varlist] [if] [in] , [FUNCtion(name)] [module(name)] [command(string)] [save(string)] [MATrices(namelist)] [SCALars(namelist)] [MACros(namelist)] [all]
 ```
 
 * `module` - is the Julia module that contains init parameters and the function to invoke.
@@ -33,11 +31,10 @@ A variable `touse` is created with value 1 if in selection, 0 otherwise. This va
 
 ## The Julia code
 
-* All matrices and dataset variables used have to be created in Stata before invoking `julia`.
-* Before invoking the Julia method, the interface opens the Julia script specified in `using()` and imports the data as specified in this file.
-* All data are in the global structure `stata`. It contins the dataset, and all imported matrices, scalars and macros.
+* Stata matrices and dataset variables cannot be created in Julia. To return data to Stata, dataset variables and matrices of the correct dimensions have to be created in Stata before invoking `julia`.
+* All data are in the Julia struct `stata`, passed as the only argument to the function specified in the Stata `julia` command. It contains the dataset, and all imported matrices, scalars and macros.
 
-* `stata.variable["name"]` - a Dict with the data variables
+* `stata.data["name"]` - a DataFrame with the data variables including `touse'
 * `stata.matrix["name"]` - a Dict with all matrices
 * `stata.global_macro["name"]` - a Dict with all macros
 * `stata.scalar["name"]` - a Dict with all scalars
@@ -50,30 +47,22 @@ All data to be used has to be specified in advance. This can either be done with
 
 The following options to the Stata `Julia` command can be used to specify what data to import and export:
 
- `setvariables(namelist)` - Variables to save to Stata
- `matrices(namelist)` - Matrices to use
- `setmatrices(namelist)` - Matrices to save, must also be in the used matrices
- `scalars(namelist)` - scalars to import
- `setscalars(namelist)` - scalars to export
- `macros(namelist)` - macros to import
- `setmacros(namelist)` - macros to export
- 
-Alternatively, the data required to invoke a function can be specified in the Julia script by defining a method taking no arguments, returning a Dict:
+- `matrices(namelist)` - matrices to use
+- `scalars(namelist)` - scalars to import
+- `macros(namelist)` - macros to import
+- `all` - Import all matrices, scalars and macros, including r() and e() values. To import these Stata return values, copies with prefix `e_` are created. These are deleted when the Julia method invoked returns.
+
+To return data from Julia to Stata, the function `putstata()` is used:
 
 ```
-# List variables, matrices, macros and scalars to use
-# All variables set must be in the corresponding get
-my_func() = Dict(
- "set_variables" => "v nv",
- "get_matrices" => "A B nvm",
- "set_matrices" => "A B nvm",
- # macros and scalars can be set without predefining them in Stata
- "get_macros" => "global1 global2",
- "set_macros"  => "global1 global2",
- "get_scalars"  => "scalar1",
- "set_scalars"  => "scalar1 scalar2"
-)
+putstata(stata, "scalars", "newscalar", 3)
+putstata(stata, "matrices", "newmat", [1 2; 3 4])
+putstata(stata, "macros", "newmacro", "Hello")
+putstata(stata, "variables", "newvar", stata.data[:var1])
 ```
+
+- Numerical data is imported and exported as doubles.
+- Macros are strings. Local macros can be imported and exported by prefixing the name with an underscore `_` character.
 
 ### The interface
 
@@ -81,17 +70,13 @@ The interface works as follows:
 
 1) The user creates all data, including the variables to be calculated in Julia.
 2) The `julia` Stata program is invoked, specifying:
-    a) where the Julia init.jl file is
-    b) which method to invoke
-3) The `julia` program
-    a) checks the init.jl script to see what data to import
-    b) imports the data to the Julia global environment
-    c) invokes the user's Julia method
-4) After the method returns, the `julia` program
-    a) modifies the Stata variables, and other data as specified in the init file init.jl
-    b) returns to Stata, deleting all data in Julia.
-
-The __stata-julia__ interface is not as ambitious as for example the R package `XRJulia`, using socket communication to enable repeated invocations.
+    a) what Stata data is to be sent to Julia
+    b) which module and function to invoke in Julia
+3) The `julia` program invokes the user's Julia function, providing a StataData struct as the only argument.
+4) The user invokes `putstata` to indicate what data should be returned to Stata.
+4) After the user function returns, the `julia` program
+    a) modifies the variables in the Stata dataset, matrices, macros and scalars
+    b) returns to Stata
 
 ## Limitations
 

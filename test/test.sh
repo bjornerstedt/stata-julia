@@ -13,5 +13,7 @@ fi
 cd ../../test
 cp ../package/statajulia.plugin .
 cp ../package/julia.ado .
+cp ../package/example.do .
+cp ../package/StataExample.jl .
 
 stata < test.do

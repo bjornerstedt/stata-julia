@@ -6,14 +6,18 @@ syntax [varlist] [if] [in], [FUNCtion(name)] [module(name)] [command(string)] [S
 [MACros(namelist)] [SETMACros(namelist)] [save(string)] [all]
 
 if ("`all'" != "") {
+    if ("`varlist'" == "") {
+        local varlist *
+    }
     * Copy e() and r() results, to make visible to statajulia
     foreach type in e r {
         local vars : `type'(scalars)
         foreach name in  `vars' {
             scalar `type'_`name' = `type'(`name')
-            local scalars `scalars' `type'_`name'
+            local erscalars `erscalars' `type'_`name'
         }
     }
+    local scalars `erscalars'
     local vars : all scalars
     foreach name in  `vars' {
         local scalars `scalars' `name'
@@ -23,15 +27,17 @@ if ("`all'" != "") {
         local vars : `type'(matrices)
         foreach name in  `vars' {
             matrix `type'_`name' = `type'(`name')
-            local matrices `matrices' `type'_`name'
+            local ermatrices `ermatrices' `type'_`name'
         }
     }
+    local matrices `ermatrices'
+
     local vars : all matrices
     foreach name in  `vars' {
         local matrices `matrices' `name'
     }
 
-    local vars : all globals "M_*"
+    local vars : all globals 
     foreach name in  `vars' {
         local macros `macros' `name'
     }
@@ -41,7 +47,10 @@ plugin call statajulia `varlist' `if' `in' , "`function'"  "`module'" "`varlist'
  "`setvariables'" "`matrices'" "`setmatrices'" "`scalars'" "`setscalars'" ///
  "`macros'" "`setmacros'"
 
- *program drop calljulia
+ if ("`all'" != "") {
+     capture matrix drop `ermatrices'
+     capture scalar drop `erscalars'
+}
 
 end
 

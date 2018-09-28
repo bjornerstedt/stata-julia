@@ -1,9 +1,11 @@
 * Tests to include:
 
-*do test_repeated.do
-do test_rw.do
-*do test_ado.do
-*do test_serial.do
-*do test_command.do
+*do test_repeated
+do test_rw
+do test_ado
+do test_command
+*do test_serial
+do test_get_all
+do example
 
  assertcount
