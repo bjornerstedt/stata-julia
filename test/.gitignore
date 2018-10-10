@@ -4,3 +4,4 @@ julia.ado
 *.bin
 StataExample.jl
 example.do
+*.dta

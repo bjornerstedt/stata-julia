@@ -5,8 +5,6 @@
 
 run initvars.do
 
-*plugin call statajulia n var1 var2, test_rw TestStataJulia
-* julia * in 1/5 , module(TestStataJulia)  function(test_rw)
 julia * if n < 6, module(TestStataJulia2)  function(test_rw) setvar(var2) setmat(matfromvar) scal(scalar1) setscal(scalar2) mac(global1) setmac(global2)
 
 di "Global macro: global1: $global1"

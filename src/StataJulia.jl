@@ -18,7 +18,7 @@ StataData() = StataData(Dict(), Dict(), Dict(),
 DataFrame(), Dict(), Dict(), IOBuffer())
 
 
-export StataData, putstata
+export StataData, putstata, stata
 
 function getInstance()
     st = StataData()
@@ -31,6 +31,39 @@ function getInstance()
     st.getvars["scalars"] = []
     st.getvars["macros"] = []
     return st
+end
+
+function stata(command::String, data::String, selection = "all")
+    # 1. Create stata batch file with command using data
+    dofile = tempname()
+    binfile = tempname()*".bin"
+    buf = """
+    capture use $data
+    global rc = _rc
+    if !_rc {
+        capture $command
+        global rc = _rc
+        julia * , save(\"$binfile\") collect($selection)
+    }
+    else {
+        julia , save(\"$binfile\") collect($selection)
+    }
+    """
+    io = open("$dofile.do", "w")
+    write(io, buf)
+    close(io)
+
+    # 2. Run Stata batch file that invokes julia.ado , all save(tmpfile)
+    run(`stata -e -q do $dofile.do`)
+    # Delete the log file that Stata creates in the current directory:
+    rm((match(r"/([^/]*)$", dofile)[1])*".log")
+    # 3. Open serialized tmpfile and return the StataData
+    statadata = deserializeData(binfile)
+    rm(binfile)
+    # Check if global rc has been defined
+    # ec = statadata.global_macro["rc"]
+    # @assert ec == "0" "Stata returned with error: $ec"
+    return statadata
 end
 
 function getInit()

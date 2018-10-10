@@ -93,8 +93,8 @@ jl_value_t *call_julia(char *module, char *funcname, jl_value_t* x, jl_value_t* 
         func = jl_get_function(my_module, funcname);
     }
 	if (jl_exception_occurred() || func == NULL) {
-		// snprintf(errbuf, 80, "Function not found: %s\n", funcname) ;
-		// SF_error(errbuf);
+		snprintf(errbuf, 80, "Function not found: %s\n", funcname) ;
+		SF_error(errbuf);
 		return NULL;
 	}
 	jl_value_t *rv;

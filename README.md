@@ -29,6 +29,13 @@ julia [varlist] [if] [in] , [FUNCtion(name)] [module(name)] [command(string)] [s
 
 A variable `touse` is created with value 1 if in selection, 0 otherwise. This variable is created even if no selection has explicitly been set.
 
+There is also a Julia method
+```
+statadata = stata(command::String, data::String, collect::String)
+```
+
+where collect can be `all|e|r|e r`. Note that this command is for the patient, as Julia is loaded each time the command is invoked.
+
 ## The Julia code
 
 * Stata matrices and dataset variables cannot be created in Julia. To return data to Stata, dataset variables and matrices of the correct dimensions have to be created in Stata before invoking `julia`.
@@ -50,7 +57,7 @@ The following options to the Stata `Julia` command can be used to specify what d
 - `matrices(namelist)` - matrices to use
 - `scalars(namelist)` - scalars to import
 - `macros(namelist)` - macros to import
-- `all` - Import all matrices, scalars and macros, including r() and e() values. To import these Stata return values, copies with prefix `e_` are created. These are deleted when the Julia method invoked returns.
+- `collect(all|r e)` - Import all matrices, scalars and macros, including r() and e() values, or only r and/or e values. To import these Stata return values, copies with prefix `e_` and `r_` are created. These are deleted when the Julia method invoked returns.
 
 To return data from Julia to Stata, the function `putstata()` is used:
 

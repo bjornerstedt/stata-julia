@@ -14,7 +14,6 @@ STDLL stata_call(int argc, char *argv[]) {
 	return retval;
 }
 
-// C application entry point
 int main(int argc, char *argv[]) {
 	int retval = 0;
 	char buf[80] ;
@@ -80,24 +79,24 @@ int main(int argc, char *argv[]) {
 	}
 
 	// function without parameters is to set data
-	if (strlen(function)) {
-		stata_data = call_julia(module, "init" , NULL, NULL, NULL);
-		if (stata_data == NULL || jl_exception_occurred()) {
-			// snprintf(buf, 80, "WARNING: Initialising function %s() in %s not found\n", function, module) ;
-			// SF_error(buf);
-			stata_data = checked_eval_string("StataJulia.getInit()");
-			if (stata_data == NULL || jl_exception_occurred()) {
-				SF_error("Could not find getInit\n");
-				return 1234;
-			}
-		}
-	} else {
+	// if (strlen(function)) {
+	// 	stata_data = call_julia(module, "init" , NULL, NULL, NULL);
+	// 	if (stata_data == NULL || jl_exception_occurred()) {
+	// 		// snprintf(buf, 80, "WARNING: Initialising function %s() in %s not found\n", function, module) ;
+	// 		// SF_error(buf);
+	// 		stata_data = checked_eval_string("StataJulia.getInit()");
+	// 		if (stata_data == NULL || jl_exception_occurred()) {
+	// 			SF_error("Could not find getInit\n");
+	// 			return 1234;
+	// 		}
+	// 	}
+	// } else {
 		stata_data = checked_eval_string("StataJulia.getInit()");
 		if (stata_data == NULL || jl_exception_occurred()) {
 			SF_error("Could not find getInit\n");
 			return 1235;
 		}
-	}
+	// }
 	JL_GC_PUSH2(&stata_data, &stata);
 
 	if (strlen(varlist)) {
@@ -105,19 +104,18 @@ int main(int argc, char *argv[]) {
 	}
 	static char* listnames[10];
 	int i = 0;
-	listnames[i++] = "set_variables";
 	listnames[i++] = "get_matrices";
-	listnames[i++] = "set_matrices";
 	listnames[i++] = "get_scalars";
-	listnames[i++] = "set_scalars";
 	listnames[i++] = "get_macros";
+	listnames[i++] = "set_variables";
+	listnames[i++] = "set_matrices";
+	listnames[i++] = "set_scalars";
 	listnames[i++] = "set_macros";
 	for ( i = 5; i < argc; i++) {
 		if (strlen(argv[i])) {
 			julia_set_varlist(stata_data, listnames[i - 5], argv[i]);
 		}
 	}
-
 	// Copy init vars from stata_data to stata
 	call_julia("StataJulia", "copyInitVars" , stata, stata_data, NULL);
 	if (jl_exception_occurred()) {
@@ -148,6 +146,7 @@ int main(int argc, char *argv[]) {
 		SF_error("Either function or command has to be specified.\n");
 		return 211;
 	}
+
 	call_julia(module, function, stata, NULL, NULL);
 	if(jl_exception_occurred()) {
 		char buf[80] ;

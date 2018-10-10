@@ -3,52 +3,65 @@ version 13
 program julia , rclass
 syntax [varlist] [if] [in], [FUNCtion(name)] [module(name)] [command(string)] [SETVARiables(namelist)] ///
 [MATrices(namelist)] [SETMATrices(namelist)] [SCALars(namelist)] [SETSCALars(namelist)] ///
-[MACros(namelist)] [SETMACros(namelist)] [save(string)] [all]
+[MACros(namelist)] [SETMACros(namelist)] [save(string)] [collect(string)]
 
-if ("`all'" != "") {
-    if ("`varlist'" == "") {
-        local varlist *
+if ("`collect'" != "") {
+    if ("`collect'" == "all") {
+        local ersel "e r"
     }
+    else {
+        local ersel "`collect'"
+    }
+    *    if ("`varlist'" == "") {
+    *        local varlist *
+    *    }
     * Copy e() and r() results, to make visible to statajulia
-    foreach type in e r {
+    foreach type in `ersel' {
         local vars : `type'(scalars)
         foreach name in  `vars' {
             scalar `type'_`name' = `type'(`name')
             local erscalars `erscalars' `type'_`name'
         }
-    }
-    local scalars `erscalars'
-    local vars : all scalars
-    foreach name in  `vars' {
-        local scalars `scalars' `name'
-    }
-
-    foreach type in e r {
         local vars : `type'(matrices)
         foreach name in  `vars' {
             matrix `type'_`name' = `type'(`name')
             local ermatrices `ermatrices' `type'_`name'
         }
+        local vars : `type'(macros)
+        foreach name in  `vars' {
+            global `type'_`name' = `type'(`name')
+            local ermacros `ermacros' `type'_`name'
+        }
     }
+    local scalars `erscalars'
     local matrices `ermatrices'
+    local macros `ermacros'
+
+    local vars : all scalars
+    foreach name in  `vars' {
+        local scalars `scalars' `name'
+    }
 
     local vars : all matrices
     foreach name in  `vars' {
         local matrices `matrices' `name'
     }
 
-    local vars : all globals 
-    foreach name in  `vars' {
-        local macros `macros' `name'
+    if ("`collect'" == "all") {
+        local vars : all globals
+        foreach name in  `vars' {
+            local macros `macros' `name'
+        }
     }
 }
 
 plugin call statajulia `varlist' `if' `in' , "`function'"  "`module'" "`varlist'" "`command'"  "`save'" ///
- "`setvariables'" "`matrices'" "`setmatrices'" "`scalars'" "`setscalars'" ///
- "`macros'" "`setmacros'"
+ "`matrices'" "`scalars'" "`macros'"  ///
+ "`setvariables'" "`setmatrices'" "`setscalars'" "`setmacros'"
 
- if ("`all'" != "") {
+ if ("`collect'" != "") {
      capture matrix drop `ermatrices'
+     capture matrix drop `ermacros'
      capture scalar drop `erscalars'
 }
 

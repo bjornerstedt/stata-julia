@@ -11,7 +11,10 @@ matrix eb = 0 * e(b)
 matlist eb
 global global2
 
-julia * if n < 6, module(TestStataJulia2)  function(test_get_all) all
+forvalues i = 1/5 {
+    di "Julia invocation: `i'"
+    quietly julia * if n < 6, module(TestStataJulia2)  function(test_get_all) collect(all)
+}
 
 local x : all matrices
 di "Matrices: `x'"
